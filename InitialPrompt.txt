@@ -1,0 +1,9 @@
+Axon Health is a AI-native medical technology company. Axon Health is an umbrella company that has many subsidiary companies under its perview such as 
+Axon Clinical Research, Axon Pharma, Axon Enterprise, Axon Consumer, and others. Axon uses Langraph as its main agentic framework. It is composed of many departmental
+agents with its own Langraph structure, memory, skills, data, etc. All departments can talk to each other and exchange memory and data. There are two very important 
+gatekeepers - one is a HIPAA Agent ( checks to see if any actions violate current HIPAA federal and state laws) and Compliance Agent (detects any other sensitive information leaks 
+double checks federal and state laws for the entire Axon Health hetwork). Axon Health runs completely on Docker, utilizing Ollama as the generic model provider.
+
+Each department (such as Marketing, Finance, Clinical SME, etc) all contain a fine-tuned LLM for that specific department. For example, a Finance LLM 
+contained in the Finance agent harness can be trained on corporate finance and business accounting and law. For the Pharma department, a small fine-tuned LLM
+can be trined on drug-discovery data and stay up to date on pharmaceutical research. 

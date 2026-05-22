@@ -1,0 +1,103 @@
+# Axon Health gatekeeper layer — single-node prototype.
+#
+# Brings up: NATS (JetStream), Ollama (model server), an init container that
+# pulls the base LLM, and the gatekeeper interceptor itself. Synthetic traffic
+# is generated via the `fake-publisher` service (run on demand via
+# `docker compose run --rm fake-publisher <scenario>`).
+#
+# Subsidiary stacks, the FastAPI UI, and the pgvector data layer are added in
+# subsequent milestones.
+
+services:
+  nats:
+    image: nats:2-alpine
+    container_name: axon-nats
+    command:
+      - "--jetstream"
+      - "--store_dir=/data"
+      - "--http_port=8222"
+    ports:
+      - "127.0.0.1:4222:4222"  # client (loopback only)
+      - "127.0.0.1:8222:8222"  # monitoring (loopback only)
+    volumes:
+      - nats-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [axon]
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: axon-ollama
+    ports:
+      - "127.0.0.1:11434:11434"  # loopback only
+    volumes:
+      - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [axon]
+
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: axon-ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        echo "Pulling base model ${DEFAULT_MODEL:-llama3.1:8b} into Ollama..."
+        OLLAMA_HOST=http://ollama:11434 ollama pull ${DEFAULT_MODEL:-llama3.1:8b}
+        echo "Done."
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    restart: "no"
+    networks: [axon]
+
+  gatekeeper-interceptor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: axon-health:dev
+    container_name: axon-gatekeeper-interceptor
+    depends_on:
+      nats:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    environment:
+      - NATS_URL=nats://nats:4222
+      - OLLAMA_BASE_URL=http://ollama:11434/v1
+      - OLLAMA_API_KEY=ollama
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-llama3.1:8b}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - SEED_DATA_ROOT=/app/seed_data
+    command: ["python", "-m", "axon.gatekeeper.interceptor"]
+    restart: unless-stopped
+    networks: [axon]
+
+  fake-publisher:
+    image: axon-health:dev
+    depends_on:
+      gatekeeper-interceptor:
+        condition: service_started
+    profiles: ["tools"]
+    environment:
+      - NATS_URL=nats://nats:4222
+    entrypoint: ["python", "-m", "axon.tools.fake_publisher"]
+    networks: [axon]
+
+volumes:
+  nats-data: {}
+  ollama-data: {}
+
+networks:
+  axon:
+    driver: bridge
