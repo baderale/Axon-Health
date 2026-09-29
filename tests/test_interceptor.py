@@ -87,14 +87,14 @@ async def test_clean_cross_subsidiary_message_is_forwarded(stub_judges):
 
     async with session() as (nc, js):
         await ensure_streams(js)
-        await _collect(nc, Subjects.GATEKEEPER_OUT, until=got_forwarded, into=forwarded)
+        await _collect(nc, Subjects.inbox("pharma"), until=got_forwarded, into=forwarded)
         await handle_request(nc, js, request)
         try:
             await asyncio.wait_for(got_forwarded.wait(), timeout=5.0)
         except asyncio.TimeoutError:
             pass
 
-    assert forwarded, "Expected the clean payload to be forwarded on GATEKEEPER_OUT"
+    assert forwarded, "Expected the clean payload to be forwarded to the pharma inbox"
     assert forwarded[0]["payload"]["question"].startswith("What is the standard")
     assert forwarded[0]["redacted"] is False
 
@@ -112,7 +112,7 @@ async def test_phi_payload_is_redacted_before_forwarding(stub_judges):
 
     async with session() as (nc, js):
         await ensure_streams(js)
-        await _collect(nc, Subjects.GATEKEEPER_OUT, until=got, into=forwarded)
+        await _collect(nc, Subjects.inbox("pharma"), until=got, into=forwarded)
         await handle_request(nc, js, request)
         try:
             await asyncio.wait_for(got.wait(), timeout=5.0)
@@ -124,6 +124,28 @@ async def test_phi_payload_is_redacted_before_forwarding(stub_judges):
     assert payload["patient_id"] == "[REDACTED]"
     assert "12345" not in payload["question"]
     assert forwarded[0]["redacted"] is True
+
+
+async def test_tier2_judges_see_the_tier1_redacted_payload(monkeypatch):
+    seen: list[dict] = []
+
+    async def recording_judge(judged_request):
+        seen.append(judged_request.payload)
+        return _stub_verdict(Decision.ALLOW, tier=Tier.TIER2_HIPAA)
+
+    monkeypatch.setattr(hipaa_agent, "evaluate", recording_judge)
+    monkeypatch.setattr(compliance_agent, "evaluate", recording_judge)
+
+    request = _make_request(
+        {"mrn": "MRN-AX-99182", "question": "For MRN MRN-AX-99182, what is the safe dose?"}
+    )
+    async with session() as (nc, js):
+        await ensure_streams(js)
+        await handle_request(nc, js, request)
+
+    assert len(seen) == 2, "Expected both judges to run"
+    for payload in seen:
+        assert "MRN-AX-99182" not in str(payload)
 
 
 async def test_egress_attempt_is_blocked_and_opens_incident(stub_judges):
@@ -153,9 +175,10 @@ async def test_egress_attempt_is_blocked_and_opens_incident(stub_judges):
             pass
 
     assert verdicts, "Expected a BLOCK verdict to be announced"
-    assert verdicts[0]["decision"] == "block"
-    assert verdicts[0]["severity"] == "high"
-    assert verdicts[0]["incident_id"] is not None
+    assert verdicts[0]["trace_id"] == request.trace_id
+    assert verdicts[0]["verdict"]["decision"] == "block"
+    assert verdicts[0]["verdict"]["severity"] == "high"
+    assert verdicts[0]["verdict"]["incident_id"] is not None
 
     assert incidents, "Expected an incident on INCIDENT.*"
     assert incidents[0]["status"] == "open"
@@ -181,8 +204,8 @@ async def test_tier2_hipaa_can_override_tier1_allow_to_block(stub_judges):
             pass
 
     assert verdicts
-    assert verdicts[0]["decision"] == "block"
-    assert verdicts[0]["severity"] == "high"
+    assert verdicts[0]["verdict"]["decision"] == "block"
+    assert verdicts[0]["verdict"]["severity"] == "high"
 
 
 async def test_tier2_compliance_can_coach(stub_judges):
@@ -204,7 +227,7 @@ async def test_tier2_compliance_can_coach(stub_judges):
     async with session() as (nc, js):
         await ensure_streams(js)
         await _collect(nc, Subjects.GATEKEEPER_VERDICT, until=got, into=verdicts)
-        await _collect(nc, Subjects.GATEKEEPER_OUT, until=no_forward_yet, into=forwarded)
+        await _collect(nc, Subjects.inbox("pharma"), until=no_forward_yet, into=forwarded)
         await handle_request(nc, js, request)
         try:
             await asyncio.wait_for(got.wait(), timeout=5.0)
@@ -212,5 +235,5 @@ async def test_tier2_compliance_can_coach(stub_judges):
             pass
         await asyncio.sleep(0.2)
 
-    assert verdicts and verdicts[0]["decision"] == "coach"
+    assert verdicts and verdicts[0]["verdict"]["decision"] == "coach"
     assert not forwarded, "COACH must not forward the payload"

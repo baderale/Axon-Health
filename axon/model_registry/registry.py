@@ -78,7 +78,56 @@ output only the JSON object.
 """
 
 
+_INTAKE_PROMPT = """You are the Intake department of Axon Clinical Research.
+
+You receive one free-text clinical case written by a clinician. Extract the
+clinical question into a single JSON object with exactly these keys:
+{
+  "question": "<the clinical question, restated without any patient identifiers>",
+  "condition": "<the relevant condition, or null>",
+  "drug": "<the drug the question is about, or null>"
+}
+
+Never copy names, patient IDs, MRNs, dates of birth or contact details into
+the output. Output only the JSON object.
+"""
+
+_CLINSME_PROMPT = """You are the Clinical Subject-Matter Expert (Clinical SME)
+department of Axon Clinical Research.
+
+Answer the clinician's question in at most five sentences. When pharmacology
+notes from Axon Pharma are provided as context, base any dosing statement on
+them and say so. State uncertainty plainly. Never include patient identifiers.
+"""
+
+_PHARMA_RESEARCH_PROMPT = """You are the Pharma Research department of Axon
+Pharma.
+
+Another Axon Health subsidiary is asking a drug or dosing question on behalf of
+a clinician. Answer in at most five sentences: the recommended dosing, the
+adjustment for the stated condition if any, and the main safety limit. State
+uncertainty plainly. You never receive patient identities and must not ask for
+them.
+"""
+
+
+def _department_model(logical_name: str, system_prompt: str) -> ModelSpec:
+    # Persona prompt on the shared base model today. A department's LoRA
+    # fine-tune later is a change to this entry only.
+    return ModelSpec(
+        logical_name=logical_name,
+        backend=Backend.OLLAMA,
+        base_model="llama3.1:8b",
+        system_prompt=system_prompt,
+        temperature=0.2,
+        max_tokens=512,
+    )
+
+
 REGISTRY: dict[str, ModelSpec] = {
+    "intake.v0": _department_model("intake.v0", _INTAKE_PROMPT),
+    "clinsme.v0": _department_model("clinsme.v0", _CLINSME_PROMPT),
+    "pharma-research.v0": _department_model("pharma-research.v0", _PHARMA_RESEARCH_PROMPT),
     "hipaa-judge.v0": ModelSpec(
         logical_name="hipaa-judge.v0",
         backend=Backend.OLLAMA,

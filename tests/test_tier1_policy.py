@@ -130,6 +130,30 @@ def test_subject_verb_indicating_egress_blocks_even_without_external_address():
     assert verdict.decision is Decision.BLOCK
 
 
+def test_egress_verb_in_final_subject_segment_blocks():
+    # axon.{source}.{target}.{dept}.{verb}: "send" sits in the verb slot here.
+    verdict = tier1_policy.evaluate(
+        _request(
+            subject="axon.clinical_research.pharma.research.send",
+            target_subsidiary="pharma",
+            payload={"body": "anything"},
+        )
+    )
+    assert verdict.decision is Decision.BLOCK
+    assert "egress.subject.send" in verdict.matched_rules
+
+
+def test_reply_verb_is_not_treated_as_egress():
+    verdict = tier1_policy.evaluate(
+        _request(
+            subject="axon.pharma.clinical_research.research.reply",
+            source_subsidiary="pharma",
+            payload={"answer": "Max 3 g/day in hepatic impairment."},
+        )
+    )
+    assert verdict.decision is Decision.ALLOW
+
+
 def test_redact_does_not_mutate_original_payload():
     payload = {"patient_id": "12345"}
     request = _request(target_subsidiary="pharma", payload=payload)

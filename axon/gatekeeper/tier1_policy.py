@@ -91,9 +91,11 @@ def evaluate(request: GatekeeperRequest) -> Verdict:
     """Run Tier-1 deterministic policy on the request and return a Verdict."""
     # Egress dominates everything — high-severity block.
     egress_hits = _scan_egress(request.payload)
-    subject_verb = request.subject.split(".")[-2] if "." in request.subject else ""
-    if subject_verb in EGRESS_SUBJECT_VERBS:
-        egress_hits.append(f"egress.subject.{subject_verb}")
+    # Subjects are axon.{source}.{target}.{dept}.{verb}; an egress word in
+    # either of the last two segments counts.
+    for segment in request.subject.split(".")[-2:] if "." in request.subject else []:
+        if segment in EGRESS_SUBJECT_VERBS:
+            egress_hits.append(f"egress.subject.{segment}")
 
     if egress_hits:
         return Verdict(

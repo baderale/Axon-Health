@@ -10,9 +10,15 @@ Subscribes to ``axon.gatekeeper.in``. For every cross-subsidiary message:
   6. Combine the verdicts into a final outcome:
         - any BLOCK   -> open INCIDENT, publish verdict, stop.
         - any COACH   -> publish verdict, stop.
-        - any REDACT  -> publish redacted payload on axon.gatekeeper.out.
-        - all ALLOW   -> publish original payload on axon.gatekeeper.out.
+        - any REDACT  -> publish redacted payload to the target's inbox.
+        - all ALLOW   -> publish original payload to the target's inbox.
   7. Always emit a final AUDIT entry for what was published.
+
+The target inbox is ``axon.gatekeeper.out.<target_subsidiary>``. It is derived
+from the request's target, never from sender-supplied headers, so a cleared
+message can only reach the subsidiary it was evaluated for. Verdicts are
+announced in an envelope carrying the ``trace_id`` (and ``in_reply_to`` for
+replies) so the sending Supervisor can match them to its own messages.
 
 Each step is idempotent on the trace_id so re-deliveries don't double-publish.
 """
@@ -110,6 +116,22 @@ def _combine_for_redact(
     )
 
 
+def _verdict_envelope(request: GatekeeperRequest, verdict: Verdict) -> dict:
+    return {
+        "trace_id": request.trace_id,
+        "in_reply_to": request.headers.get("in_reply_to"),
+        "source_subsidiary": request.source_subsidiary,
+        "target_subsidiary": request.target_subsidiary,
+        "verdict": verdict.model_dump(mode="json"),
+    }
+
+
+def _out_subject(request: GatekeeperRequest) -> str:
+    if request.target_subsidiary:
+        return Subjects.inbox(request.target_subsidiary)
+    return Subjects.GATEKEEPER_OUT
+
+
 async def handle_request(
     nc: NATS,
     js: JetStreamContext,
@@ -136,13 +158,19 @@ async def handle_request(
     # Tier-2 only when the boundary is being crossed or Tier-1 escalates.
     tier2_verdicts: list[Verdict] = []
     if tier1.needs_escalation() or tier1.decision is Decision.REDACT:
-        hipaa_v = await hipaa_agent.evaluate(request)
+        # The judges see what would actually be forwarded: Tier-1's redacted
+        # payload when there is one. Judging the raw payload makes them object
+        # to identifiers that are already gone.
+        judged = request
+        if tier1.decision is Decision.REDACT and tier1.redacted_payload is not None:
+            judged = request.model_copy(update={"payload": tier1.redacted_payload})
+        hipaa_v = await hipaa_agent.evaluate(judged)
         await emit_audit(
             js, stage=f"tier2.hipaa.{hipaa_v.decision.value}", request=request, verdict=hipaa_v
         )
         tier2_verdicts.append(hipaa_v)
         if hipaa_v.decision is not Decision.BLOCK:
-            comp_v = await compliance_agent.evaluate(request)
+            comp_v = await compliance_agent.evaluate(judged)
             await emit_audit(
                 js,
                 stage=f"tier2.compliance.{comp_v.decision.value}",
@@ -154,11 +182,13 @@ async def handle_request(
     final_verdict, final_payload = _combine_for_redact(request, tier1, tier2_verdicts)
 
     # Always announce the verdict on the verdict subject.
-    await publish_json(nc, Subjects.GATEKEEPER_VERDICT, final_verdict.model_dump(mode="json"))
-
     if final_verdict.decision is Decision.BLOCK:
         await _finalize_block(nc, js, request, final_verdict)
         return
+
+    await publish_json(
+        nc, Subjects.GATEKEEPER_VERDICT, _verdict_envelope(request, final_verdict)
+    )
 
     if final_verdict.decision is Decision.COACH:
         await emit_audit(
@@ -167,9 +197,11 @@ async def handle_request(
         return
 
     # ALLOW or REDACT: republish payload on the outbound channel.
-    out_subject = request.headers.get("forward_to", Subjects.GATEKEEPER_OUT)
+    out_subject = _out_subject(request)
     envelope = {
         "trace_id": request.trace_id,
+        "in_reply_to": request.headers.get("in_reply_to"),
+        "conversation_id": request.headers.get("conversation_id"),
         "source_subsidiary": request.source_subsidiary,
         "target_subsidiary": request.target_subsidiary,
         "original_subject": request.subject,
@@ -191,7 +223,7 @@ async def _finalize_block(
 ) -> None:
     incident = await open_incident(js, request=request, verdict=verdict)
     blocked = verdict.model_copy(update={"incident_id": incident.incident_id})
-    await publish_json(nc, Subjects.GATEKEEPER_VERDICT, blocked.model_dump(mode="json"))
+    await publish_json(nc, Subjects.GATEKEEPER_VERDICT, _verdict_envelope(request, blocked))
     await emit_audit(js, stage="interceptor.blocked", request=request, verdict=blocked)
 
 
@@ -202,6 +234,21 @@ async def _decode_request(msg: Msg) -> GatekeeperRequest | None:
     except Exception as exc:  # noqa: BLE001
         log.warning("interceptor.decode_failed", error=str(exc), raw=msg.data[:200])
         return None
+
+
+async def attach(nc: NATS, js: JetStreamContext):
+    """Subscribe the interceptor to ``axon.gatekeeper.in`` on an open connection."""
+
+    async def handler(msg: Msg) -> None:
+        request = await _decode_request(msg)
+        if request is None:
+            return
+        try:
+            await handle_request(nc, js, request)
+        except Exception as exc:  # noqa: BLE001
+            log.exception("interceptor.unhandled_error", error=str(exc))
+
+    return await subscribe(nc, Subjects.GATEKEEPER_IN, handler, queue="gatekeeper-interceptor")
 
 
 async def run() -> None:
@@ -222,16 +269,7 @@ async def run() -> None:
             except NotImplementedError:
                 pass  # Windows
 
-        async def handler(msg: Msg) -> None:
-            request = await _decode_request(msg)
-            if request is None:
-                return
-            try:
-                await handle_request(nc, js, request)
-            except Exception as exc:  # noqa: BLE001
-                log.exception("interceptor.unhandled_error", error=str(exc))
-
-        await subscribe(nc, Subjects.GATEKEEPER_IN, handler, queue="gatekeeper-interceptor")
+        await attach(nc, js)
         log.info("interceptor.started", subject=Subjects.GATEKEEPER_IN)
         await stop_event.wait()
 

@@ -5,8 +5,11 @@
 # is generated via the `fake-publisher` service (run on demand via
 # `docker compose run --rm fake-publisher <scenario>`).
 #
-# Subsidiary stacks, the FastAPI UI, and the pgvector data layer are added in
-# subsequent milestones.
+# Milestone 2 adds the first two subsidiaries, Axon Clinical Research and Axon
+# Pharma, each as its own service. Ask Clinical Research a question with
+# `docker compose run --rm ask "<case>"`.
+#
+# The FastAPI UI and the pgvector data layer are added in later milestones.
 
 services:
   nats:
@@ -32,7 +35,8 @@ services:
     image: ollama/ollama:latest
     container_name: axon-ollama
     ports:
-      - "127.0.0.1:11434:11434"  # loopback only
+      # Loopback only. Set OLLAMA_HOST_PORT if a native Ollama already holds 11434.
+      - "127.0.0.1:${OLLAMA_HOST_PORT:-11434}:11434"
     volumes:
       - ollama-data:/root/.ollama
     healthcheck:
@@ -81,6 +85,58 @@ services:
       - SEED_DATA_ROOT=/app/seed_data
     command: ["python", "-m", "axon.gatekeeper.interceptor"]
     restart: unless-stopped
+    networks: [axon]
+
+  clinical-research:
+    image: axon-health:dev
+    pull_policy: never
+    container_name: axon-clinical-research
+    depends_on:
+      gatekeeper-interceptor:
+        condition: service_started
+    environment: &subsidiary-env
+      - NATS_URL=nats://nats:4222
+      - OLLAMA_BASE_URL=http://ollama:11434/v1
+      - OLLAMA_API_KEY=ollama
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - AXON_CONSULT_TIMEOUT=${AXON_CONSULT_TIMEOUT:-300}
+    command: ["python", "-m", "axon.subsidiaries.run", "clinical_research"]
+    restart: unless-stopped
+    networks: [axon]
+
+  pharma:
+    image: axon-health:dev
+    pull_policy: never
+    container_name: axon-pharma
+    depends_on:
+      gatekeeper-interceptor:
+        condition: service_started
+    environment: *subsidiary-env
+    command: ["python", "-m", "axon.subsidiaries.run", "pharma"]
+    restart: unless-stopped
+    networks: [axon]
+
+  ask:
+    image: axon-health:dev
+    pull_policy: never
+    depends_on:
+      clinical-research:
+        condition: service_started
+      pharma:
+        condition: service_started
+    profiles: ["tools"]
+    environment:
+      - NATS_URL=nats://nats:4222
+    entrypoint: ["python", "-m", "axon.tools.ask"]
+    networks: [axon]
+
+  audit:
+    image: axon-health:dev
+    pull_policy: never
+    profiles: ["tools"]
+    environment:
+      - NATS_URL=nats://nats:4222
+    entrypoint: ["python", "-m", "axon.tools.audit"]
     networks: [axon]
 
   fake-publisher:

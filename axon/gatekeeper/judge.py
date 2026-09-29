@@ -14,6 +14,7 @@ from typing import TypedDict
 import structlog
 from langgraph.graph import END, START, StateGraph
 
+from axon.bus.subjects import Subjects
 from axon.gatekeeper.retrieval import retrieve
 from axon.gatekeeper.verdict import (
     Decision,
@@ -39,12 +40,30 @@ def _make_query(request: GatekeeperRequest) -> str:
     return f"{request.subject} {payload_str}"
 
 
+def _describe_exchange(request: GatekeeperRequest) -> str | None:
+    """Plain-language reading of the subject, so the judge need not parse it."""
+    parsed = Subjects.parse_cross_subsidiary(request.subject)
+    if parsed is None:
+        return None
+    source, target, dept, verb = parsed
+    if verb == "reply":
+        return (
+            f"The {dept} department of {source} is answering a question that "
+            f"{target} asked it (internal exchange between Axon Health subsidiaries)."
+        )
+    return (
+        f"{source} is sending a '{verb}' to the {dept} department of {target} "
+        "(internal exchange between Axon Health subsidiaries)."
+    )
+
+
 def _build_user_message(request: GatekeeperRequest) -> str:
     return json.dumps(
         {
             "source_subsidiary": request.source_subsidiary,
             "target_subsidiary": request.target_subsidiary,
             "subject": request.subject,
+            "exchange": _describe_exchange(request),
             "payload": request.payload,
         },
         indent=2,
@@ -72,9 +91,10 @@ def _parse_verdict(text: str, *, tier: Tier) -> Verdict:
         )
 
     try:
+        # Small models often answer "ALLOW" / "High"; the schema is lowercase.
         return Verdict(
-            decision=Decision(data["decision"]),
-            severity=Severity(data.get("severity", "low")),
+            decision=Decision(str(data["decision"]).strip().lower()),
+            severity=Severity(str(data.get("severity") or "low").strip().lower()),
             tier=tier,
             rationale=data.get("rationale", ""),
             coaching_message=data.get("coaching_message"),

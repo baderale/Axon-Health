@@ -92,7 +92,7 @@ async def _run(scenario: str, *, timeout: float) -> int:
             received.append(("out", decode_json(msg)))
 
         await subscribe(nc, Subjects.GATEKEEPER_VERDICT, on_verdict)
-        await subscribe(nc, Subjects.GATEKEEPER_OUT, on_out)
+        await subscribe(nc, Subjects.inbox(request.target_subsidiary), on_out)
 
         print(f"--> scenario={scenario} trace_id={request.trace_id}")
         await publish_json(
