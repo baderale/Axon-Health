@@ -197,6 +197,38 @@ tr:last-child td { border-bottom: 0; }
 .gloss dt { font-weight: 600; }
 .gloss dd { margin: 0; color: var(--muted); }
 .stage-note { font-size: 13px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 12px; margin: 0; }
+/* Structure diagram */
+.dg-scroll { overflow-x: auto; }
+.dg-scroll svg { display: block; width: 100%; min-width: 860px; height: auto; }
+.dg-node { fill: var(--panel); stroke: var(--ink); stroke-width: 1.4; }
+.dg-node.planned { stroke: var(--muted); stroke-dasharray: 6 4; }
+.dg-node.idea { fill: var(--bg); stroke: var(--muted); stroke-dasharray: 2 4; }
+.dg-gate { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.4; }
+.dg-band { fill: var(--bg); stroke: var(--accent); stroke-width: 1.2; }
+.dg-frame { fill: var(--bg); stroke: var(--rule); stroke-width: 1.2; }
+.dg-frame.idea { stroke: var(--muted); stroke-dasharray: 2 4; }
+.dg-hq { fill: var(--ink); }
+.dg-hq-t { fill: var(--bg); font-family: var(--display); font-size: 16px; font-weight: 800; }
+.dg-hq-s { fill: var(--bg); opacity: .75; font-family: var(--mono); font-size: 11px; }
+.dg-bus { stroke: var(--accent); stroke-width: 6; stroke-linecap: round; }
+.dg-edge { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.dg-edge.a { stroke: var(--accent); stroke-width: 1.8; }
+.dg-edge.idea { stroke-dasharray: 2 4; }
+.dg-arrow { fill: var(--muted); }
+.dg-arrow-a { fill: var(--accent); }
+.dg-name { fill: var(--ink); font-family: var(--display); font-size: 15px; font-weight: 600; }
+.dg-t { fill: var(--ink); font-family: var(--body); font-size: 13px; font-weight: 600; }
+.dg-s { fill: var(--muted); font-family: var(--mono); font-size: 11px; }
+.dg-lbl { fill: var(--muted); font-family: var(--mono); font-size: 10.5px; letter-spacing: .03em; }
+.dg-lbl.a { fill: var(--accent); }
+.dg-key { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 12.5px; color: var(--muted); }
+.dg-key span { display: inline-flex; align-items: center; gap: 8px; }
+.dg-key i { width: 28px; height: 0; border-top: 2px solid var(--ink); }
+.dg-key i.planned { border-top: 2px dashed var(--muted); }
+.dg-key i.idea { border-top: 2px dotted var(--muted); }
+.dg-key i.bus { border-top: 5px solid var(--accent); border-radius: 3px; }
+figure.dg { margin: 0; display: grid; gap: 10px; }
+figure.dg figcaption { font-size: 13.5px; color: var(--muted); max-width: 80ch; }
 footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
 @media (prefers-reduced-motion: no-preference) { .unit, .run { transition: border-color .15s, background-color .15s; } }
 </style>
@@ -263,6 +295,139 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
       </div>
     </div>
     <p class="stage-note">The rest of this page shows the enterprise as built today: which parts are live, how the gatekeepers decided on real messages, and what comes next.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="struct-h">
+    <div class="panel-head">
+      <h2 id="struct-h">How Axon Health is structured</h2>
+      <div class="dg-key"><span><i></i>Live</span><span><i class="planned"></i>Planned</span><span><i class="idea"></i>Idea</span><span><i class="bus"></i>Message bus</span></div>
+    </div>
+    <figure class="dg">
+      <div class="dg-scroll">
+  <svg viewBox="0 0 1200 672" role="img" aria-label="Axon Health structure: the parent company sets policy for a shared governance layer. Every message between subsidiaries travels on one bus and passes Tier-1 rules, the HIPAA Agent and the Compliance Agent before delivery, with every step recorded in the audit log. Each subsidiary connects to the bus only through its Supervisor, which delegates work to its departments. Clinical Research and Pharma are live; Enterprise and Consumer are ideas.">
+    <defs>
+      <marker id="dg-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-arrow" d="M0,0 L10,5 L0,10 z"/></marker>
+      <marker id="dg-ah-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-arrow-a" d="M0,0 L10,5 L0,10 z"/></marker>
+    </defs>
+
+    <rect class="dg-hq" x="500" y="12" width="200" height="52" rx="10"/>
+    <text class="dg-hq-t" x="600" y="37" text-anchor="middle">Axon Health</text>
+    <text class="dg-hq-s" x="600" y="54" text-anchor="middle">parent company</text>
+    <line class="dg-edge" x1="600" y1="64" x2="600" y2="95" marker-end="url(#dg-ah)"/>
+    <text class="dg-lbl" x="608" y="84">sets policy</text>
+
+    <rect class="dg-band" x="20" y="96" width="1160" height="194" rx="14"/>
+    <text class="dg-lbl a" x="40" y="122">GOVERNANCE · SHARED BY EVERY SUBSIDIARY</text>
+
+    <rect class="dg-gate" x="190" y="140" width="170" height="60" rx="8"/>
+    <text class="dg-t" x="275" y="166" text-anchor="middle">Tier-1 rules</text>
+    <text class="dg-s" x="275" y="185" text-anchor="middle">strips patient IDs</text>
+    <rect class="dg-gate" x="430" y="140" width="170" height="60" rx="8"/>
+    <text class="dg-t" x="515" y="166" text-anchor="middle">HIPAA Agent</text>
+    <text class="dg-s" x="515" y="185" text-anchor="middle">hipaa-judge.v0</text>
+    <rect class="dg-gate" x="670" y="140" width="170" height="60" rx="8"/>
+    <text class="dg-t" x="755" y="166" text-anchor="middle">Compliance Agent</text>
+    <text class="dg-s" x="755" y="185" text-anchor="middle">compliance-judge.v0</text>
+    <rect class="dg-gate" x="910" y="140" width="210" height="60" rx="8"/>
+    <text class="dg-t" x="1015" y="166" text-anchor="middle">Deliver</text>
+    <text class="dg-s" x="1015" y="185" text-anchor="middle">allow or redact only</text>
+
+    <line class="dg-edge a" x1="360" y1="170" x2="429" y2="170" marker-end="url(#dg-ah-a)"/>
+    <text class="dg-lbl a" x="395" y="162" text-anchor="middle">redacted</text>
+    <line class="dg-edge a" x1="600" y1="170" x2="669" y2="170" marker-end="url(#dg-ah-a)"/>
+    <text class="dg-lbl a" x="635" y="162" text-anchor="middle">passed</text>
+    <line class="dg-edge a" x1="840" y1="170" x2="909" y2="170" marker-end="url(#dg-ah-a)"/>
+    <text class="dg-lbl a" x="875" y="162" text-anchor="middle">cleared</text>
+
+    <rect class="dg-node" x="190" y="226" width="170" height="44" rx="8"/>
+    <text class="dg-t" x="275" y="245" text-anchor="middle">Audit log</text>
+    <text class="dg-s" x="275" y="261" text-anchor="middle">every step · 7 years</text>
+    <rect class="dg-node" x="430" y="226" width="170" height="44" rx="8"/>
+    <text class="dg-t" x="515" y="245" text-anchor="middle">Incident queue</text>
+    <text class="dg-s" x="515" y="261" text-anchor="middle">opened on block</text>
+    <rect class="dg-node planned" x="670" y="226" width="170" height="44" rx="8"/>
+    <text class="dg-t" x="755" y="245" text-anchor="middle">Human review</text>
+    <text class="dg-s" x="755" y="261" text-anchor="middle">planned</text>
+
+    <line class="dg-edge" x1="275" y1="200" x2="275" y2="225" marker-end="url(#dg-ah)"/>
+    <text class="dg-lbl" x="283" y="216">records</text>
+    <line class="dg-edge" x1="515" y1="200" x2="515" y2="225" marker-end="url(#dg-ah)"/>
+    <text class="dg-lbl" x="523" y="216">on block</text>
+    <line class="dg-edge" x1="600" y1="248" x2="669" y2="248" marker-end="url(#dg-ah)"/>
+    <text class="dg-lbl" x="635" y="241" text-anchor="middle">decides</text>
+
+    <path class="dg-edge a" d="M110,327 V170 H189" marker-end="url(#dg-ah-a)"/>
+    <text class="dg-lbl a" x="118" y="284">all traffic in</text>
+    <line class="dg-edge a" x1="1015" y1="200" x2="1015" y2="326" marker-end="url(#dg-ah-a)"/>
+    <text class="dg-lbl a" x="1023" y="262">to target inbox</text>
+
+    <line class="dg-bus" x1="24" y1="330" x2="1176" y2="330"/>
+    <text class="dg-lbl a" x="130" y="318">INTER-SUBSIDIARY BUS · NATS</text>
+    <text class="dg-lbl a" x="262" y="352">only link out</text>
+
+    <rect class="dg-frame" x="20" y="360" width="272" height="296" rx="12"/>
+    <line class="dg-edge a" x1="256" y1="334" x2="256" y2="422" marker-start="url(#dg-ah-a)" marker-end="url(#dg-ah-a)"/>
+    <text class="dg-name" x="36" y="388">Axon Clinical Research</text>
+    <text class="dg-s" x="36" y="406">live · clinical_research</text>
+    <rect class="dg-node live" x="106" y="424" width="170" height="44" rx="8"/>
+    <text class="dg-t" x="191" y="443" text-anchor="middle">Supervisor</text>
+    <text class="dg-s" x="191" y="459" text-anchor="middle">routes work</text>
+    <path class="dg-edge" d="M106,446 H60 V616"/>
+    <path class="dg-edge" d="M60,512 H79" marker-end="url(#dg-ah)"/>
+    <rect class="dg-node live" x="80" y="492" width="196" height="40" rx="7"/>
+    <text class="dg-t" x="92" y="509">Intake</text>
+    <text class="dg-s" x="92" y="524">intake.v0</text>
+    <path class="dg-edge" d="M60,564 H79" marker-end="url(#dg-ah)"/>
+    <rect class="dg-node live" x="80" y="544" width="196" height="40" rx="7"/>
+    <text class="dg-t" x="92" y="561">Clinical SME</text>
+    <text class="dg-s" x="92" y="576">clinsme.v0</text>
+    <path class="dg-edge" d="M60,616 H79" marker-end="url(#dg-ah)"/>
+    <rect class="dg-node planned" x="80" y="596" width="196" height="40" rx="7"/>
+    <text class="dg-t" x="92" y="613">Compliance</text>
+    <text class="dg-s" x="92" y="628">internal SOP checks</text>
+    <text class="dg-lbl" x="268" y="613" text-anchor="end">planned</text>
+    <rect class="dg-frame" x="316" y="360" width="272" height="296" rx="12"/>
+    <line class="dg-edge a" x1="552" y1="334" x2="552" y2="422" marker-start="url(#dg-ah-a)" marker-end="url(#dg-ah-a)"/>
+    <text class="dg-name" x="332" y="388">Axon Pharma</text>
+    <text class="dg-s" x="332" y="406">live · pharma</text>
+    <rect class="dg-node live" x="402" y="424" width="170" height="44" rx="8"/>
+    <text class="dg-t" x="487" y="443" text-anchor="middle">Supervisor</text>
+    <text class="dg-s" x="487" y="459" text-anchor="middle">routes work</text>
+    <path class="dg-edge" d="M402,446 H356 V564"/>
+    <path class="dg-edge" d="M356,512 H375" marker-end="url(#dg-ah)"/>
+    <rect class="dg-node live" x="376" y="492" width="196" height="40" rx="7"/>
+    <text class="dg-t" x="388" y="509">Pharma Research</text>
+    <text class="dg-s" x="388" y="524">pharma-research.v0</text>
+    <path class="dg-edge" d="M356,564 H375" marker-end="url(#dg-ah)"/>
+    <rect class="dg-node planned" x="376" y="544" width="196" height="40" rx="7"/>
+    <text class="dg-t" x="388" y="561">Marketing</text>
+    <text class="dg-s" x="388" y="576">FDA rules apply</text>
+    <text class="dg-lbl" x="564" y="561" text-anchor="end">planned</text>
+    <rect class="dg-frame idea" x="612" y="360" width="272" height="160" rx="12"/>
+    <line class="dg-edge a idea" x1="848" y1="334" x2="848" y2="422" marker-start="url(#dg-ah-a)" marker-end="url(#dg-ah-a)"/>
+    <text class="dg-name" x="628" y="388">Axon Enterprise</text>
+    <text class="dg-s" x="628" y="406">idea · not scheduled</text>
+    <rect class="dg-node idea" x="698" y="424" width="170" height="44" rx="8"/>
+    <text class="dg-t" x="783" y="443" text-anchor="middle">Supervisor</text>
+    <text class="dg-s" x="783" y="459" text-anchor="middle">proposed</text>
+    <text class="dg-lbl" x="748" y="500" text-anchor="middle">departments not yet defined</text>
+    <rect class="dg-frame idea" x="908" y="360" width="272" height="160" rx="12"/>
+    <line class="dg-edge a idea" x1="1144" y1="334" x2="1144" y2="422" marker-start="url(#dg-ah-a)" marker-end="url(#dg-ah-a)"/>
+    <text class="dg-name" x="924" y="388">Axon Consumer</text>
+    <text class="dg-s" x="924" y="406">idea · not scheduled</text>
+    <rect class="dg-node idea" x="994" y="424" width="170" height="44" rx="8"/>
+    <text class="dg-t" x="1079" y="443" text-anchor="middle">Supervisor</text>
+    <text class="dg-s" x="1079" y="459" text-anchor="middle">proposed</text>
+    <text class="dg-lbl" x="1044" y="500" text-anchor="middle">departments not yet defined</text>
+
+    <text class="dg-lbl" x="896" y="552" text-anchor="middle">NOT YET PLACED</text>
+    <rect class="dg-node idea" x="700" y="562" width="392" height="48" rx="8"/>
+    <text class="dg-t" x="896" y="582" text-anchor="middle">Finance</text>
+    <text class="dg-s" x="896" y="599" text-anchor="middle">named in the brief · subsidiary not chosen</text>
+  </svg>
+      </div>
+      <figcaption>Subsidiaries never talk to each other directly. Each one's Supervisor is its only link to the shared bus, and everything on the bus passes Tier-1 rules, the HIPAA Agent and the Compliance Agent before it is delivered. A coached message goes back to the sender with advice; a blocked one opens an incident. Every step is written to the audit log.</figcaption>
+    </figure>
   </section>
 
   <section class="kpis" aria-label="Summary">

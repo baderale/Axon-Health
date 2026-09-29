@@ -6,7 +6,7 @@ Both are published as private claude.ai artifacts; share them from the page's
 
 | Page | File | Published at |
 |---|---|---|
-| **Axon Health Enterprise Console**: about Axon Health, enterprise map, live gatekeeper traces, models, roadmap | `axon-console.html` (built) | https://claude.ai/artifact/LRyuKZ9cZjSD3pDskCuyk1 |
+| **Axon Health Enterprise Console**: about Axon Health, structure diagram, enterprise map, live gatekeeper traces, models, roadmap | `axon-console.html` (built) | https://claude.ai/artifact/LRyuKZ9cZjSD3pDskCuyk1 |
 | **Axon Health Org Map**: one-page organisational chart with built / planned / idea status | `org-map.html` | https://claude.ai/artifact/XqDRLGNk9xBRVRu69i9bLf |
 
 The console is a **snapshot**, not a live feed: a shared web page cannot reach
@@ -47,6 +47,9 @@ Enterprise Console", or pass the URL above as the artifact to update).
 - The headline numbers (subsidiaries and departments live, test count) and the
   roadmap cards are hand-written in the template. Update them when a milestone
   lands.
+- The structure diagram ("How Axon Health is structured") is inline SVG with
+  hand-placed coordinates in the template. When a subsidiary or department
+  changes status, change its class (`live`, `planned`, `idea`) and text there.
 - The traces show the synthetic test identifiers `patient_id 12345` and
   `MRN-AX-99182`. Never put real patient data in `snapshot.json`: this page is
   meant to be shared.
