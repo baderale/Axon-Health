@@ -2,6 +2,8 @@
 
 AI-native medical-technology umbrella platform. Federated subsidiaries, LangGraph agents, two-tier HIPAA + Compliance gatekeepers on a NATS bus.
 
+**New here?** Start with [`docs/about.md`](docs/about.md): what Axon Health is, its mission, vision and goals, and a glossary. To show the platform to someone, share the **Enterprise Console** or the **Org Map**. Both are listed with their links in [`docs/dashboard/`](docs/dashboard/README.md).
+
 > **Status:** Two milestones done. The **gatekeeper layer** (Tier-1 deterministic policy + Tier-2 LLM judges + AUDIT/INCIDENT streams) and the **first two subsidiaries**, Axon Clinical Research and Axon Pharma, which consult each other through it. The FastAPI/HTMX user surface, human review of blocks, and the pgvector data layer arrive in later milestones. Milestone details and acceptance criteria live in [`docs/milestones/`](docs/milestones/).
 
 ## Architecture in one paragraph
@@ -59,8 +61,10 @@ axon/
   audit/               AUDIT.* / INCIDENT.* JetStream helpers
   subsidiary/          Template: department contract, Supervisor graph, runtime
   subsidiaries/        Axon Clinical Research, Axon Pharma, service entry point
-  tools/               Operator CLIs (ask, fake_publisher)
+  tools/               Operator CLIs (ask, audit, dashboard, fake_publisher)
+docs/about.md          What Axon Health is: mission, vision, goals, glossary
 docs/milestones/       Goals and acceptance criteria per milestone
+docs/dashboard/        Shareable Enterprise Console and Org Map, and how to refresh them
 seed_data/
   hipaa_rules/         RAG corpus for the HIPAA Agent
   compliance_policy/   RAG corpus for the Compliance Agent

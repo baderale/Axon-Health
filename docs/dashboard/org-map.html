@@ -1,0 +1,304 @@
+<title>Axon Health Org Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: top-down org tree. HQ → governance band (the bus every subsidiary must cross) → subsidiary columns → departments. Status is encoded in border style. */
+:root {
+  --bg: #f3f5f4;
+  --surface: #ffffff;
+  --ink: #14211f;
+  --muted: #5b6b68;
+  --line: #c7d1ce;
+  --teal: #0f6b62;
+  --teal-soft: #dcefeb;
+  --gate: #a4520e;
+  --gate-soft: #f8e9da;
+  --hq: #14211f;
+  --hq-fg: #f3f5f4;
+  --font-display: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1615; --surface: #16211f; --ink: #e3ebe9; --muted: #93a5a1; --line: #2e3e3b;
+    --teal: #5cc4b6; --teal-soft: #173a35; --gate: #f0a45e; --gate-soft: #3a2614;
+    --hq: #e3ebe9; --hq-fg: #0e1615; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1615; --surface: #16211f; --ink: #e3ebe9; --muted: #93a5a1; --line: #2e3e3b;
+  --teal: #5cc4b6; --teal-soft: #173a35; --gate: #f0a45e; --gate-soft: #3a2614;
+  --hq: #e3ebe9; --hq-fg: #0e1615; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 56px; display: grid; gap: 28px; }
+
+header { display: grid; gap: 10px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+.lede { margin: 0; max-width: 68ch; color: var(--muted); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 10px 20px; font-size: 13px; color: var(--muted); align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 26px; height: 16px; border-radius: 4px; background: var(--surface); }
+.sw.built { border: 2px solid var(--teal); background: var(--teal-soft); }
+.sw.planned { border: 1.5px solid var(--ink); }
+.sw.vision { border: 1.5px dashed var(--muted); }
+
+/* Node status */
+.node { background: var(--surface); border-radius: 8px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.node.built { border: 2px solid var(--teal); background: var(--teal-soft); }
+.node.planned { border: 1.5px solid var(--ink); }
+.node.vision { border: 1.5px dashed var(--muted); }
+.node .name { font-weight: 600; font-size: 14px; }
+.node .meta { font-size: 12.5px; color: var(--muted); }
+.node code, .mono { font-family: var(--font-mono); font-size: 12px; overflow-wrap: anywhere; }
+
+/* Tier connectors */
+.tier { position: relative; }
+.stem { width: 2px; height: 22px; background: var(--line); margin: 0 auto; }
+
+.hq { background: var(--hq); color: var(--hq-fg); border-radius: 10px; padding: 16px 20px; max-width: 560px; margin: 0 auto; text-align: center; display: grid; gap: 4px; }
+.hq .t { font-family: var(--font-display); font-weight: 800; font-size: 22px; }
+.hq .s { font-size: 13px; opacity: .8; }
+
+/* Governance band */
+.gov { border: 2px solid var(--gate); background: var(--gate-soft); border-radius: 12px; padding: 16px; display: grid; gap: 14px; }
+.gov-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
+.gov-head h2 { font-family: var(--font-display); font-size: 18px; margin: 0; color: var(--gate); }
+.gov-head p { margin: 0; font-size: 13px; color: var(--muted); max-width: 70ch; }
+.pipeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.pipeline .node { position: relative; }
+.step { font-family: var(--font-mono); font-size: 11px; color: var(--gate); letter-spacing: .06em; text-transform: uppercase; }
+.verdicts { display: flex; flex-wrap: wrap; gap: 6px; }
+.v { font-family: var(--font-mono); font-size: 11.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+.v.allow { color: var(--teal); border-color: var(--teal); }
+.v.block { color: var(--gate); border-color: var(--gate); }
+.support { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+
+/* Subsidiaries */
+.subs-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
+.subs-head h2 { font-family: var(--font-display); font-size: 18px; margin: 0; }
+.subs-head p { margin: 0; font-size: 13px; color: var(--muted); }
+.subs { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; align-items: start; }
+.sub { display: grid; gap: 8px; min-width: 0; }
+.sub > .node.head { padding: 12px; }
+.sub > .node.head .name { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
+.sub .bus-tag { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.depts { display: grid; gap: 6px; padding-left: 14px; border-left: 2px solid var(--line); margin-left: 12px; }
+.dept-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-left: 12px; }
+.model { font-family: var(--font-mono); font-size: 11.5px; color: var(--teal); }
+.empty { font-size: 13px; color: var(--muted); font-style: italic; padding: 6px 0; }
+
+/* Trace */
+.trace { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; }
+.trace h2 { font-family: var(--font-display); font-size: 18px; margin: 0; }
+.trace ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
+.trace li { padding-left: 4px; }
+.trace li::marker { font-family: var(--font-mono); color: var(--muted); }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.notes section { display: grid; gap: 6px; align-content: start; }
+.notes h3 { font-family: var(--font-display); font-size: 15px; margin: 0; }
+.notes p, .notes ul { margin: 0; font-size: 14px; color: var(--muted); }
+.notes ul { padding-left: 18px; display: grid; gap: 4px; }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Organizational map · updated 29 Sep 2026 after milestone 2</div>
+    <h1>Axon Health enterprise structure</h1>
+    <p class="lede">Every subsidiary runs its own agents, data and models. The only path between subsidiaries is the Inter-Subsidiary Bus, and every message on it passes the HIPAA and Compliance gatekeepers first.</p>
+    <div class="legend" aria-label="Legend">
+      <span><i class="sw built"></i>Built and tested</span>
+      <span><i class="sw planned"></i>Planned milestone</span>
+      <span><i class="sw vision"></i>In the brief, not yet scheduled</span>
+    </div>
+  </header>
+
+  <div class="tier">
+    <div class="hq">
+      <div class="t">Axon Health</div>
+      <div class="s">AI-native medtech umbrella company · runs entirely on Docker · Ollama model serving (vLLM in production)</div>
+    </div>
+    <div class="stem"></div>
+  </div>
+
+  <section class="gov" aria-labelledby="gov-h">
+    <div class="gov-head">
+      <h2 id="gov-h">Governance layer</h2>
+      <p>Shared by the whole network. Sits on the bus as an interceptor, so no subsidiary can bypass it.</p>
+    </div>
+    <div class="pipeline">
+      <div class="node built">
+        <span class="step">Entry</span>
+        <span class="name">Inter-Subsidiary Bus</span>
+        <span class="meta">NATS + JetStream. Supervisors publish to <code>axon.gatekeeper.in</code></span>
+      </div>
+      <div class="node built">
+        <span class="step">Check 1</span>
+        <span class="name">Tier-1 rule engine</span>
+        <span class="meta">Fixed rules, no AI. Detects PHI and data leaving the network.</span>
+      </div>
+      <div class="node built">
+        <span class="step">Check 2</span>
+        <span class="name">HIPAA Agent</span>
+        <span class="meta">Federal and state HIPAA law. Model <code>hipaa-judge.v0</code></span>
+      </div>
+      <div class="node built">
+        <span class="step">Check 3</span>
+        <span class="name">Compliance Agent</span>
+        <span class="meta">FDA marketing, 21 CFR Part 11, IP and trade secrets, SEC/FTC, sanctions. Model <code>compliance-judge.v0</code></span>
+      </div>
+      <div class="node built">
+        <span class="step">Verdict</span>
+        <span class="name">Severity ladder</span>
+        <div class="verdicts"><span class="v allow">allow</span><span class="v">redact</span><span class="v">coach</span><span class="v block">block</span></div>
+      </div>
+    </div>
+    <div class="support">
+      <div class="node built">
+        <span class="name">Audit log</span>
+        <span class="meta">Permanent <code>AUDIT.*</code> stream. Every message is copied here.</span>
+      </div>
+      <div class="node built">
+        <span class="name">Incident queue</span>
+        <span class="meta"><code>INCIDENT.*</code> stream. Every block opens an incident.</span>
+      </div>
+      <div class="node planned">
+        <span class="name">Human review</span>
+        <span class="meta">A person approves or denies blocked messages on <code>axon.hitl.verdict</code>.</span>
+      </div>
+      <div class="node built">
+        <span class="name">Model Registry</span>
+        <span class="meta">Maps each agent's model name to its backend, base model and prompt. Base: <code>llama3.1:8b</code></span>
+      </div>
+      <div class="node planned">
+        <span class="name">Operator web interface</span>
+        <span class="meta">FastAPI + HTMX: <code>/</code>, <code>/trace/&lt;id&gt;</code>, <code>/incidents</code></span>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="subs-h" style="display:grid;gap:14px">
+    <div class="subs-head">
+      <h2 id="subs-h">Subsidiaries</h2>
+      <p>Each has one Supervisor, the only agent allowed to send messages outside its subsidiary.</p>
+    </div>
+    <div class="subs">
+
+      <div class="sub">
+        <div class="node built head">
+          <span class="name">Axon Clinical Research</span>
+          <span class="bus-tag">bus id: clinical_research</span>
+        </div>
+        <div class="node built">
+          <span class="name">Supervisor</span>
+          <span class="meta">Sends all outbound messages</span>
+        </div>
+        <div class="dept-label">Departments</div>
+        <div class="depts">
+          <div class="node built"><span class="name">Intake</span><span class="model">intake.v0</span></div>
+          <div class="node built"><span class="name">Clinical SME</span><span class="meta">Consults Pharma Research on drugs and dosing</span><span class="model">clinsme.v0</span></div>
+          <div class="node planned"><span class="name">Compliance</span><span class="meta">Internal SOP checks</span><span class="model">department LLM</span></div>
+        </div>
+      </div>
+
+      <div class="sub">
+        <div class="node built head">
+          <span class="name">Axon Pharma</span>
+          <span class="bus-tag">bus id: pharma</span>
+        </div>
+        <div class="node built">
+          <span class="name">Supervisor</span>
+          <span class="meta">Sends all outbound messages</span>
+        </div>
+        <div class="dept-label">Departments</div>
+        <div class="depts">
+          <div class="node built"><span class="name">Pharma Research</span><span class="meta">Drug discovery, current pharma research</span><span class="model">pharma-research.v0</span></div>
+          <div class="node planned"><span class="name">Marketing</span><span class="meta">FDA marketing rules apply</span><span class="model">department LLM</span></div>
+        </div>
+      </div>
+
+      <div class="sub">
+        <div class="node vision head">
+          <span class="name">Axon Enterprise</span>
+          <span class="bus-tag">not yet scheduled</span>
+        </div>
+        <div class="node vision">
+          <span class="name">Supervisor</span>
+          <span class="meta">Sends all outbound messages</span>
+        </div>
+        <div class="dept-label">Departments</div>
+        <div class="depts"><div class="empty">Not yet defined</div></div>
+      </div>
+
+      <div class="sub">
+        <div class="node vision head">
+          <span class="name">Axon Consumer</span>
+          <span class="bus-tag">not yet scheduled</span>
+        </div>
+        <div class="node vision">
+          <span class="name">Supervisor</span>
+          <span class="meta">Sends all outbound messages</span>
+        </div>
+        <div class="dept-label">Departments</div>
+        <div class="depts"><div class="empty">Not yet defined</div></div>
+      </div>
+
+      <div class="sub">
+        <div class="node vision head">
+          <span class="name">Further subsidiaries</span>
+          <span class="bus-tag">"and others" in the brief</span>
+        </div>
+        <div class="dept-label">Departments named but not placed</div>
+        <div class="depts">
+          <div class="node vision"><span class="name">Finance</span><span class="meta">Corporate finance, business accounting and law</span><span class="model">department LLM</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="trace" aria-labelledby="trace-h">
+    <h2 id="trace-h">One message, end to end</h2>
+    <p style="margin:0;color:var(--muted);font-size:14px">This ran live on 29 Sep 2026 with real models, in about 50 seconds. Clinical Research asked Pharma a dosing question that included a patient ID and MRN.</p>
+    <ol>
+      <li>Intake structures the case. Clinical SME sees it's a dosing question and asks its Supervisor to consult Pharma.</li>
+      <li>The Supervisor publishes on <span class="mono">axon.clinical_research.pharma.research.query</span>, which enters the gatekeeper.</li>
+      <li>Tier-1 finds the patient ID and MRN and removes them.</li>
+      <li>The HIPAA Agent and Compliance Agent review what is left. Verdict: <span class="v">redact</span></li>
+      <li>Pharma receives only the condition, drug and question, and Pharma Research answers.</li>
+      <li>The answer goes back through the gatekeeper on <span class="mono">axon.pharma.clinical_research.research.reply</span>. Verdict: <span class="v allow">allow</span></li>
+      <li>Clinical SME writes the final answer from Pharma's notes. Both legs are in the audit log under one conversation ID.</li>
+    </ol>
+  </section>
+
+  <div class="notes">
+    <section>
+      <h3>Rules that shape the structure</h3>
+      <ul>
+        <li>Subsidiaries are separate. They do not share databases or model servers.</li>
+        <li>Only the Supervisor can send messages outside its subsidiary.</li>
+        <li>Messages between departments of one subsidiary stay inside it.</li>
+        <li>Every department gets its own fine-tuned LLM. For now all use the same base model, and the LoRA fine-tunes are deferred.</li>
+      </ul>
+    </section>
+    <section>
+      <h3>Not yet built at any level</h3>
+      <ul>
+        <li>Clinical Research Compliance and Pharma Marketing departments</li>
+        <li>Enterprise and Consumer subsidiaries</li>
+        <li>Per-subsidiary pgvector database</li>
+        <li>Human review workflow and operator web interface</li>
+        <li>Department models (fine-tuned LoRA weights)</li>
+      </ul>
+    </section>
+  </div>
+
+  <footer>Source: Axon-Health repo, branch milestone-2-subsidiaries at commit a3f5d81 (README roadmap, InitialPrompt.txt, axon/bus/subjects.py, axon/model_registry/registry.py, axon/tools/fake_publisher.py). Enterprise and Consumer departments are left blank on purpose because the brief does not name them.</footer>
+</div>

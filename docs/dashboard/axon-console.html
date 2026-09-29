@@ -1,0 +1,530 @@
+<title>Axon Health Enterprise Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: operations console. Summary strip, then enterprise map beside a detail inspector, then gatekeeper traffic (run list beside a stage timeline), then verdict mix, models and roadmap. */
+:root {
+  --bg: #eef2f5;
+  --panel: #ffffff;
+  --ink: #0f1d2b;
+  --muted: #58687a;
+  --rule: #d5dde5;
+  --accent: #1d5f8c;
+  --accent-soft: #e2edf5;
+  --allow: #1c7a4d;
+  --allow-soft: #dff1e7;
+  --redact: #5b4bb5;
+  --redact-soft: #e9e6f8;
+  --coach: #a3620a;
+  --coach-soft: #fbeed8;
+  --block: #b3261e;
+  --block-soft: #f9e0de;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b131b; --panel: #121d28; --ink: #e4ebf2; --muted: #93a3b4; --rule: #25364a;
+    --accent: #6fb3e4; --accent-soft: #16304a;
+    --allow: #5fd19a; --allow-soft: #123626; --redact: #a99cf5; --redact-soft: #262048;
+    --coach: #f2b25c; --coach-soft: #3a2a10; --block: #f28b82; --block-soft: #3d1715;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b131b; --panel: #121d28; --ink: #e4ebf2; --muted: #93a3b4; --rule: #25364a;
+  --accent: #6fb3e4; --accent-soft: #16304a;
+  --allow: #5fd19a; --allow-soft: #123626; --redact: #a99cf5; --redact-soft: #262048;
+  --coach: #f2b25c; --coach-soft: #3a2a10; --block: #f28b82; --block-soft: #3d1715;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14.5px; line-height: 1.5; }
+.wrap { max-width: 1320px; margin: 0 auto; padding-inline: 20px; padding-block: 24px 48px; display: grid; gap: 20px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h2 { font-size: 17px; font-weight: 600; }
+.label { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+.muted { color: var(--muted); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Header */
+.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+.top h1 { font-size: clamp(26px, 3.4vw, 36px); font-weight: 800; letter-spacing: -.01em; }
+.top p { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
+.stamp { display: grid; gap: 2px; text-align: right; }
+.stamp strong { font-family: var(--mono); font-size: 12.5px; font-weight: 500; }
+
+/* Panels */
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; }
+.panel-head p { margin: 0; color: var(--muted); font-size: 13px; }
+
+/* KPI strip */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.kpi { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: grid; gap: 4px; }
+.kpi .v { font-family: var(--display); font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.kpi .v small { font-size: 16px; color: var(--muted); font-weight: 600; }
+.kpi .d { font-size: 12.5px; color: var(--muted); }
+.kpi.good .v { color: var(--allow); }
+
+/* Pills and status */
+.pill { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11.5px; padding: 2px 9px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
+.pill.allow { background: var(--allow-soft); color: var(--allow); }
+.pill.redact { background: var(--redact-soft); color: var(--redact); }
+.pill.coach { background: var(--coach-soft); color: var(--coach); }
+.pill.block { background: var(--block-soft); color: var(--block); }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.status::before { content: ""; width: 9px; height: 9px; border-radius: 50%; }
+.status.live::before { background: var(--allow); }
+.status.planned::before { border: 2px solid var(--muted); width: 5px; height: 5px; }
+.status.idea::before { border: 1.5px dashed var(--muted); width: 6px; height: 6px; }
+
+/* Main grids */
+.row { display: grid; gap: 20px; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: start; }
+.row.even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.row.traffic { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+@media (max-width: 900px) { .row, .row.even, .row.traffic { grid-template-columns: minmax(0, 1fr); } }
+
+/* Enterprise map */
+.map { display: grid; gap: 12px; }
+.unit { text-align: left; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; cursor: pointer; display: grid; gap: 2px; min-width: 0; }
+.unit:hover { border-color: var(--accent); }
+.unit[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.unit .n { font-weight: 600; }
+.unit .r { font-size: 12.5px; color: var(--muted); }
+.unit.dashed { border-style: dashed; }
+.hq { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.hq .r { color: var(--bg); opacity: .75; }
+.hq[aria-pressed="true"] { background: var(--ink); box-shadow: 0 0 0 3px var(--accent); }
+.gov { border: 1px solid var(--rule); border-radius: 8px; padding: 10px; display: grid; gap: 8px; background: var(--bg); }
+.gov-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.subs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.sub { border: 1px solid var(--rule); border-radius: 8px; padding: 8px; display: grid; gap: 6px; align-content: start; }
+.sub.idea { border-style: dashed; }
+.sub .unit { border-color: transparent; background: transparent; padding: 6px 8px; }
+.sub .unit:hover { border-color: var(--rule); }
+.sub .unit[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.sub .unit.headunit .n { font-family: var(--display); font-size: 15px; }
+.depts { display: grid; gap: 2px; margin-left: 10px; padding-left: 8px; border-left: 2px solid var(--rule); }
+.unit-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+/* Inspector */
+.inspector { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.inspector h3 { font-size: 20px; font-weight: 800; }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 13.5px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; min-width: 0; }
+@media (max-width: 900px) { .inspector { position: static; } }
+
+/* Traffic */
+.runs { display: grid; gap: 8px; }
+.run { text-align: left; border: 1px solid var(--rule); background: var(--panel); border-radius: 8px; padding: 10px 12px; cursor: pointer; display: grid; gap: 6px; }
+.run:hover { border-color: var(--accent); }
+.run[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.run .line { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.run .t { font-family: var(--mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.run .lesson { font-size: 12.5px; color: var(--muted); }
+.legs { display: grid; gap: 14px; }
+.leg h3 { font-size: 14px; font-weight: 600; font-family: var(--body); display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.steps { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 0; }
+.step { display: grid; grid-template-columns: 78px 150px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-top: 1px solid var(--rule); align-items: start; }
+.step:first-child { border-top: 0; }
+.step .t { font-family: var(--mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.step .who { font-weight: 600; font-size: 13px; display: grid; gap: 4px; justify-items: start; }
+.step .why { font-size: 13px; color: var(--muted); min-width: 0; }
+.step .why em { color: var(--ink); font-style: normal; }
+@media (max-width: 560px) { .step { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.diff { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+@media (max-width: 560px) { .diff { grid-template-columns: minmax(0, 1fr); } }
+.box { border: 1px solid var(--rule); border-radius: 8px; padding: 10px; display: grid; gap: 6px; background: var(--bg); min-width: 0; }
+.box pre { margin: 0; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.box .gone { color: var(--block); text-decoration: line-through; }
+.answer { border-left: 3px solid var(--allow); padding: 4px 0 4px 12px; margin: 0; max-width: 72ch; }
+
+/* Verdict mix chart */
+.mix { display: grid; gap: 12px; }
+.mix-row { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; align-items: center; }
+.bar { display: flex; height: 26px; border-radius: 6px; overflow: hidden; background: var(--bg); }
+.bar span { display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11.5px; font-variant-numeric: tabular-nums; min-width: 0; }
+.bar .allow { background: var(--allow); color: var(--panel); }
+.bar .redact { background: var(--redact); color: var(--panel); }
+.bar .coach { background: var(--coach); color: var(--panel); }
+.bar .block { background: var(--block); color: var(--panel); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Tables */
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--rule); }
+td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+
+/* Roadmap */
+.roadmap { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.ms { border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; display: grid; gap: 4px; align-content: start; }
+.ms.done { border-color: var(--allow); background: var(--allow-soft); }
+.ms.part { border-color: var(--accent); }
+.ms.later { border-style: dashed; }
+.ms .n { font-weight: 600; font-size: 13.5px; }
+/* About */
+.about { display: grid; gap: 22px; padding: 22px; }
+.thesis { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 900px) { .thesis { grid-template-columns: minmax(0, 1fr); } }
+.thesis .big { font-family: var(--display); font-size: clamp(20px, 2.3vw, 26px); font-weight: 600; line-height: 1.3; margin: 6px 0 0; text-wrap: balance; max-width: 34ch; }
+.thesis .big b { color: var(--accent); font-weight: 800; }
+.thesis p { margin: 10px 0 0; max-width: 64ch; }
+.mv { display: grid; gap: 10px; }
+.mv div { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; display: grid; gap: 2px; }
+.mv p { margin: 0; }
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.pillar { border-top: 2px solid var(--ink); padding-top: 10px; display: grid; gap: 4px; align-content: start; }
+.pillar h3 { font-size: 15px; font-weight: 600; }
+.pillar p { margin: 0; font-size: 13.5px; color: var(--muted); }
+.about-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; }
+@media (max-width: 900px) { .about-cols { grid-template-columns: minmax(0, 1fr); } }
+.goals { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.goals li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: baseline; font-size: 13.5px; }
+.tag { justify-self: start; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 8px; border-radius: 4px; border: 1px solid var(--rule); color: var(--muted); }
+.tag.done { border-color: var(--ink); color: var(--ink); }
+.tag.next { border-color: var(--accent); color: var(--accent); }
+.tag.later { border-style: dashed; }
+.gloss { margin: 8px 0 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 7px 14px; font-size: 13.5px; }
+.gloss dt { font-weight: 600; }
+.gloss dd { margin: 0; color: var(--muted); }
+.stage-note { font-size: 13px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 12px; margin: 0; }
+footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
+@media (prefers-reduced-motion: no-preference) { .unit, .run { transition: border-color .15s, background-color .15s; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="label">Axon Health · enterprise console</div>
+      <h1>Axon Health Enterprise Console</h1>
+      <p>What Axon Health is, how it is organised, and how its privacy gatekeepers handled real messages. Select any unit or run below to see its details.</p>
+    </div>
+    <div class="stamp">
+      <span class="label">Snapshot</span>
+      <strong id="stamp"></strong>
+      <span class="muted mono" id="stamp-rev"></span>
+    </div>
+  </header>
+
+  <section class="panel about" aria-labelledby="about-h">
+    <div class="thesis">
+      <div>
+        <h2 id="about-h" class="label" style="font-family:var(--mono);font-size:11px;font-weight:400">About Axon Health</h2>
+        <p class="big">An AI-native medical-technology company, where every department is run by <b>its own specialist AI</b> and every message between companies passes <b>privacy and compliance checks</b> first.</p>
+        <p>Axon Health is an umbrella company with subsidiaries across the health-care value chain: clinical research, pharmaceuticals, enterprise services and consumer health. Inside each subsidiary, departments such as Intake, Clinical SME, Pharma Research, Marketing and Finance are AI agents, each with a model trained for its field. The agents work together and share knowledge, and two AI gatekeepers make sure nothing they exchange breaks HIPAA or other federal and state law.</p>
+      </div>
+      <div class="mv">
+        <div><span class="label">Mission</span><p>Help medical research and care move faster by letting specialist AI agents work together across the whole enterprise, without compromising patient privacy or regulatory compliance.</p></div>
+        <div><span class="label">Vision</span><p>A health enterprise where every department has its own expert AI, and where compliance is enforced by the platform on every message instead of by review after the fact.</p></div>
+        <div><span class="label">Where it stands</span><p>Working prototype. Two subsidiaries are live and exchanging real questions through the gatekeepers.</p></div>
+      </div>
+    </div>
+
+    <div class="pillars">
+      <div class="pillar"><span class="label">How it is organised</span><h3>Separate subsidiaries</h3><p>Each subsidiary keeps its own agents, data and models. Nothing is shared by default, so one company's records stay with that company.</p></div>
+      <div class="pillar"><span class="label">Who does the work</span><h3>A specialist AI per department</h3><p>Each department has its own model, trained or prompted for its field. A Finance model knows corporate finance and accounting law; a Pharma model follows drug research.</p></div>
+      <div class="pillar"><span class="label">How they talk</span><h3>One supervised channel</h3><p>Each subsidiary has one Supervisor, the only agent allowed to contact another subsidiary. All of that traffic goes over one shared message bus.</p></div>
+      <div class="pillar"><span class="label">What keeps it safe</span><h3>Two gatekeepers, full audit</h3><p>The HIPAA Agent and Compliance Agent check every message. Patient identifiers are removed, risky messages are stopped, and every decision is kept for seven years.</p></div>
+      <div class="pillar"><span class="label">Where it runs</span><h3>Private by design</h3><p>Everything runs in Docker with open models served by Ollama on Axon's own hardware. No patient data is sent to an outside AI service.</p></div>
+    </div>
+
+    <div class="about-cols">
+      <div>
+        <h3 style="font-size:15px;font-weight:600">Goals</h3>
+        <ol class="goals">
+          <li><span class="tag done">Done</span><span>Prove that two subsidiaries can share clinical knowledge with patient identifiers removed automatically.</span></li>
+          <li><span class="tag next">Next</span><span>Put a person in the loop: every blocked message goes to a human reviewer who approves or denies it.</span></li>
+          <li><span class="tag next">Next</span><span>Give operators a live console inside the platform, like this page but updating in real time.</span></li>
+          <li><span class="tag later">Later</span><span>Give each department its own fine-tuned model instead of a shared base model.</span></li>
+          <li><span class="tag later">Later</span><span>Bring Axon Enterprise and Axon Consumer online, and add Compliance, Marketing and Finance departments.</span></li>
+          <li><span class="tag later">Later</span><span>Run in production on HIPAA-eligible managed Kubernetes, using the same design as today.</span></li>
+        </ol>
+      </div>
+      <div>
+        <h3 style="font-size:15px;font-weight:600">Terms used on this page</h3>
+        <dl class="gloss">
+          <dt>Subsidiary</dt><dd>One Axon company, such as Axon Pharma.</dd>
+          <dt>Department</dt><dd>A specialist AI agent inside a subsidiary.</dd>
+          <dt>Supervisor</dt><dd>The agent that routes a subsidiary's work and is its only contact with other subsidiaries.</dd>
+          <dt>Gatekeeper</dt><dd>The checks every message between subsidiaries must pass: fixed rules, then the HIPAA Agent, then the Compliance Agent.</dd>
+          <dt>PHI</dt><dd>Protected health information: anything that could identify a patient, like a name, ID or record number.</dd>
+          <dt>Verdict</dt><dd><span class="pill allow">allow</span> deliver as is · <span class="pill redact">redact</span> remove identifiers, then deliver · <span class="pill coach">coach</span> send back with advice · <span class="pill block">block</span> stop and open an incident.</dd>
+          <dt>Audit log</dt><dd>The permanent record of every check and decision.</dd>
+        </dl>
+      </div>
+    </div>
+    <p class="stage-note">The rest of this page shows the enterprise as built today: which parts are live, how the gatekeepers decided on real messages, and what comes next.</p>
+  </section>
+
+  <section class="kpis" aria-label="Summary">
+    <div class="kpi"><span class="label">Subsidiaries live</span><span class="v">2 <small>of 4 named</small></span><span class="d">Clinical Research, Pharma</span></div>
+    <div class="kpi"><span class="label">Departments live</span><span class="v">3 <small>of 5 planned</small></span><span class="d">Intake, Clinical SME, Pharma Research</span></div>
+    <div class="kpi"><span class="label">Live runs checked</span><span class="v" id="k-runs">4</span><span class="d" id="k-runs-d">1 answered end to end, 3 coached</span></div>
+    <div class="kpi good"><span class="label">Identifiers reaching Pharma</span><span class="v">0</span><span class="d">Patient ID and MRN removed on every run</span></div>
+    <div class="kpi good"><span class="label">Automated tests</span><span class="v">37 <small>/ 37</small></span><span class="d">28 unit, 9 on a real message bus</span></div>
+  </section>
+
+  <div class="row">
+    <section class="panel" aria-labelledby="map-h">
+      <div class="panel-head">
+        <h2 id="map-h">Enterprise map</h2>
+        <div class="legend"><span class="status live">Live</span><span class="status planned">Planned</span><span class="status idea">Idea, not scheduled</span></div>
+      </div>
+      <div class="map" id="map"></div>
+    </section>
+    <aside class="panel inspector" aria-live="polite" id="inspector"></aside>
+  </div>
+
+  <div class="row traffic">
+    <section class="panel" aria-labelledby="runs-h">
+      <div class="panel-head"><h2 id="runs-h">Gatekeeper runs</h2><p>Live runs, real models</p></div>
+      <div class="runs" id="runs"></div>
+    </section>
+    <section class="panel" aria-labelledby="trace-h">
+      <div class="panel-head"><h2 id="trace-h">Message trace</h2><p id="trace-sub"></p></div>
+      <div class="legs" id="trace"></div>
+    </section>
+  </div>
+
+  <div class="row even">
+    <section class="panel" aria-labelledby="mix-h">
+      <div class="panel-head"><h2 id="mix-h">Decisions by checkpoint</h2><p id="mix-sub"></p></div>
+      <div class="mix" id="mix"></div>
+      <div class="legend"><span class="pill allow">allow</span><span class="pill redact">redact</span><span class="pill coach">coach</span><span class="pill block">block</span></div>
+    </section>
+    <section class="panel" aria-labelledby="models-h">
+      <div class="panel-head"><h2 id="models-h">Model registry</h2><p>All on llama3.1:8b today</p></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Model</th><th>Used by</th><th>Knowledge</th></tr></thead>
+        <tbody id="models"></tbody>
+      </table></div>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="road-h">
+    <div class="panel-head"><h2 id="road-h">Roadmap</h2><p>From the repo README and milestone docs</p></div>
+    <div class="roadmap" id="roadmap"></div>
+  </section>
+
+  <footer>
+    <span id="source-note">Source: the Axon-Health repo and its AUDIT stream.</span>
+    <span>Patient ID 12345 and MRN MRN-AX-99182 are synthetic test identifiers, not real patient data.</span>
+  </footer>
+</div>
+
+<script>
+// Filled in by axon/tools/dashboard.py from docs/dashboard/snapshot.json.
+const SNAPSHOT = {"generated_at": "2026-09-29T19:08:43+00:00", "revision": "branch milestone-2-subsidiaries \u00b7 a3f5d81", "total_audit_events": 180, "runs": {"0befde17-56d9-4713-b9e0-521a634954d8": {"note": "Compliance meant to allow but wrote \"ALLOW\" in capitals. Fixed: the parser accepts any case.", "final_answer": ""}, "5fec2453-ea18-49db-82d2-af6f6abc0541": {"note": "Answered end to end. Identifiers removed going out, answer allowed coming back.", "final_answer": "Based on the pharmacology notes from Axon Pharma, the safe dosing window for acetaminophen is a maximum daily dose of 2 grams or less, with a maximum single dose of 1 gram. This is particularly important for patients with hepatic impairment, as higher doses can increase the risk of liver injury. However, it's worth noting that there is some uncertainty in the optimal dosing for patients with severe hepatic impairment."}, "b63ec4bd-657d-4430-93e0-c7167fde5a3c": {"note": "Compliance saw the MRN that Tier-1 had already removed. Fixed: judges now see the redacted message.", "final_answer": ""}, "ef9e7baa-b449-4796-9f78-8091f35eec56": {"note": "Question went through. Pharma's answer was coached as possible drug marketing. Fixed: judges are told who is answering whom.", "final_answer": ""}}, "events": [{"conv": "b63ec4bd-657d-4430-93e0-c7167fde5a3c", "stage": "tier1.redact", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:05:12.770559Z", "rationale": "PHI identifiers detected by deterministic policy. Redacted inflight; escalating to LLM judges for semantic context check.", "coaching": null, "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "b63ec4bd-657d-4430-93e0-c7167fde5a3c", "stage": "tier2.hipaa.redact", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:05:23.236456Z", "rationale": "Patient identifiers (patient_id, mrn) must be removed to comply with the Minimum Necessary Standard.", "coaching": null, "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "b63ec4bd-657d-4430-93e0-c7167fde5a3c", "stage": "tier2.compliance.coach", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:05:30.848441Z", "rationale": "", "coaching": "The payload references a patient's medical record (MRN-AX-99182) and condition (hepatic impairment). Is this for internal scientific discussion or external promotional copy? Please specify the intended use case to proceed.", "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "b63ec4bd-657d-4430-93e0-c7167fde5a3c", "stage": "interceptor.coached", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:05:30.850268Z", "rationale": "", "coaching": "The payload references a patient's medical record (MRN-AX-99182) and condition (hepatic impairment). Is this for internal scientific discussion or external promotional copy? Please specify the intended use case to proceed.", "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "ef9e7baa-b449-4796-9f78-8091f35eec56", "stage": "tier1.redact", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:06:12.991855Z", "rationale": "PHI identifiers detected by deterministic policy. Redacted inflight; escalating to LLM judges for semantic context check.", "coaching": null, "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "ef9e7baa-b449-4796-9f78-8091f35eec56", "stage": "tier2.hipaa.redact", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:06:21.572901Z", "rationale": "Patient identifiers (patient_id, mrn) must be redacted to comply with the Minimum Necessary Standard.", "coaching": null, "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "ef9e7baa-b449-4796-9f78-8091f35eec56", "stage": "tier2.compliance.allow", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:06:24.783104Z", "rationale": "The payload references a legitimate internal scientific discussion between Clinical Research and Pharma Research. The discussion is about a specific condition and a drug, and the question is about safe dosing, which is a valid topic for internal discussion.", "coaching": null, "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "ef9e7baa-b449-4796-9f78-8091f35eec56", "stage": "interceptor.published.redact", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:06:24.784836Z", "rationale": "Payload redacted by gatekeeper pipeline.", "coaching": null, "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": {"condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}}, {"conv": "ef9e7baa-b449-4796-9f78-8091f35eec56", "stage": "tier1.allow", "subject": "axon.pharma.clinical_research.research.reply", "src": "pharma", "tgt": "clinical_research", "at": "2026-09-29T18:06:33.624885Z", "rationale": "Clean payload crossing subsidiary boundary; escalate to LLM judges.", "coaching": null, "sent": {"answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is 500-1000 mg every 6 hours, not to exceed 4 grams per day. However, due to the potential for increased risk of liver injury, we recommend starting with the lower end of this range (500 mg every 6 hours) and monitoring liver function closely. There is limited data on the safe dosing of acetaminophen in patients with severe hepatic impairment, and caution is advised. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day, even in patients without pre-existing liver disease. We note that the FDA has established a maximum daily dose of 4 grams for acetaminophen in patients with normal liver function, but this limit may need to be adjusted in patients with hepatic impairment."}, "forwarded": null}, {"conv": "ef9e7baa-b449-4796-9f78-8091f35eec56", "stage": "tier2.hipaa.allow", "subject": "axon.pharma.clinical_research.research.reply", "src": "pharma", "tgt": "clinical_research", "at": "2026-09-29T18:06:47.214421Z", "rationale": "The payload contains clinical information about acetaminophen dosing, which is necessary for the clinical research team to provide informed guidance. No PHI is present in the payload.", "coaching": null, "sent": {"answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is 500-1000 mg every 6 hours, not to exceed 4 grams per day. However, due to the potential for increased risk of liver injury, we recommend starting with the lower end of this range (500 mg every 6 hours) and monitoring liver function closely. There is limited data on the safe dosing of acetaminophen in patients with severe hepatic impairment, and caution is advised. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day, even in patients without pre-existing liver disease. We note that the FDA has established a maximum daily dose of 4 grams for acetaminophen in patients with normal liver function, but this limit may need to be adjusted in patients with hepatic impairment."}, "forwarded": null}, {"conv": "ef9e7baa-b449-4796-9f78-8091f35eec56", "stage": "tier2.compliance.coach", "subject": "axon.pharma.clinical_research.research.reply", "src": "pharma", "tgt": "clinical_research", "at": "2026-09-29T18:07:02.559450Z", "rationale": "", "coaching": "The payload contains a statement about the recommended dosing of acetaminophen in patients with hepatic impairment. Please specify whether this is for internal scientific discussion or external promotional copy. If external, ensure it complies with FDA marketing restrictions.", "sent": {"answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is 500-1000 mg every 6 hours, not to exceed 4 grams per day. However, due to the potential for increased risk of liver injury, we recommend starting with the lower end of this range (500 mg every 6 hours) and monitoring liver function closely. There is limited data on the safe dosing of acetaminophen in patients with severe hepatic impairment, and caution is advised. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day, even in patients without pre-existing liver disease. We note that the FDA has established a maximum daily dose of 4 grams for acetaminophen in patients with normal liver function, but this limit may need to be adjusted in patients with hepatic impairment."}, "forwarded": null}, {"conv": "ef9e7baa-b449-4796-9f78-8091f35eec56", "stage": "interceptor.coached", "subject": "axon.pharma.clinical_research.research.reply", "src": "pharma", "tgt": "clinical_research", "at": "2026-09-29T18:07:02.559862Z", "rationale": "", "coaching": "The payload contains a statement about the recommended dosing of acetaminophen in patients with hepatic impairment. Please specify whether this is for internal scientific discussion or external promotional copy. If external, ensure it complies with FDA marketing restrictions.", "sent": {"answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is 500-1000 mg every 6 hours, not to exceed 4 grams per day. However, due to the potential for increased risk of liver injury, we recommend starting with the lower end of this range (500 mg every 6 hours) and monitoring liver function closely. There is limited data on the safe dosing of acetaminophen in patients with severe hepatic impairment, and caution is advised. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day, even in patients without pre-existing liver disease. We note that the FDA has established a maximum daily dose of 4 grams for acetaminophen in patients with normal liver function, but this limit may need to be adjusted in patients with hepatic impairment."}, "forwarded": null}, {"conv": "0befde17-56d9-4713-b9e0-521a634954d8", "stage": "tier1.redact", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:07:56.265287Z", "rationale": "PHI identifiers detected by deterministic policy. Redacted inflight; escalating to LLM judges for semantic context check.", "coaching": null, "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "0befde17-56d9-4713-b9e0-521a634954d8", "stage": "tier2.hipaa.redact", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:08:01.418698Z", "rationale": "The payload contains patient identifiers (patient_id, mrn) that are not necessary for the intended purpose of the query.", "coaching": null, "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "0befde17-56d9-4713-b9e0-521a634954d8", "stage": "tier2.compliance.coach", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:08:03.801411Z", "rationale": "Judge output failed schema validation: 'ALLOW' is not a valid Decision", "coaching": "Internal judge schema error; please retry.", "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "0befde17-56d9-4713-b9e0-521a634954d8", "stage": "interceptor.coached", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:08:03.802020Z", "rationale": "Judge output failed schema validation: 'ALLOW' is not a valid Decision", "coaching": "Internal judge schema error; please retry.", "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "5fec2453-ea18-49db-82d2-af6f6abc0541", "stage": "tier1.redact", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:08:32.766985Z", "rationale": "PHI identifiers detected by deterministic policy. Redacted inflight; escalating to LLM judges for semantic context check.", "coaching": null, "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "5fec2453-ea18-49db-82d2-af6f6abc0541", "stage": "tier2.hipaa.redact", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:08:36.282635Z", "rationale": "Patient identifiers (patient_id, mrn) must be redacted to comply with the Minimum Necessary Standard.", "coaching": null, "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "5fec2453-ea18-49db-82d2-af6f6abc0541", "stage": "tier2.compliance.allow", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:08:38.153813Z", "rationale": "Internal exchange between Axon Health subsidiaries (clinical_research and pharma) for legitimate scientific discussion. No PHI leakage or marketing claims detected.", "coaching": null, "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": null}, {"conv": "5fec2453-ea18-49db-82d2-af6f6abc0541", "stage": "interceptor.published.redact", "subject": "axon.clinical_research.pharma.research.query", "src": "clinical_research", "tgt": "pharma", "at": "2026-09-29T18:08:38.154183Z", "rationale": "Payload redacted by gatekeeper pipeline.", "coaching": null, "sent": {"patient_id": "12345", "mrn": "MRN-AX-99182", "condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}, "forwarded": {"condition": "hepatic impairment", "drug": "acetaminophen", "question": "What is the safe dosing window for acetaminophen?"}}, {"conv": "5fec2453-ea18-49db-82d2-af6f6abc0541", "stage": "tier1.allow", "subject": "axon.pharma.clinical_research.research.reply", "src": "pharma", "tgt": "clinical_research", "at": "2026-09-29T18:08:44.400096Z", "rationale": "Clean payload crossing subsidiary boundary; escalate to LLM judges.", "coaching": null, "sent": {"answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is typically reduced to minimize the risk of liver injury. The maximum daily dose is 2 grams or less, with a maximum single dose of 1 gram. However, the exact dosing should be determined on a case-by-case basis, taking into account the severity of the hepatic impairment and other factors. There is some uncertainty in the optimal dosing for patients with severe hepatic impairment, and clinicians should exercise caution when prescribing. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day."}, "forwarded": null}, {"conv": "5fec2453-ea18-49db-82d2-af6f6abc0541", "stage": "tier2.hipaa.allow", "subject": "axon.pharma.clinical_research.research.reply", "src": "pharma", "tgt": "clinical_research", "at": "2026-09-29T18:08:58.322753Z", "rationale": "The payload contains clinical information and does not contain any PHI. The exchange is between Axon Health subsidiaries, which is permitted under the BAA.", "coaching": "Consider redacting the specific medication name (acetaminophen) for future exchanges to minimize PHI exposure.", "sent": {"answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is typically reduced to minimize the risk of liver injury. The maximum daily dose is 2 grams or less, with a maximum single dose of 1 gram. However, the exact dosing should be determined on a case-by-case basis, taking into account the severity of the hepatic impairment and other factors. There is some uncertainty in the optimal dosing for patients with severe hepatic impairment, and clinicians should exercise caution when prescribing. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day."}, "forwarded": null}, {"conv": "5fec2453-ea18-49db-82d2-af6f6abc0541", "stage": "tier2.compliance.allow", "subject": "axon.pharma.clinical_research.research.reply", "src": "pharma", "tgt": "clinical_research", "at": "2026-09-29T18:09:10.454317Z", "rationale": "", "coaching": null, "sent": {"answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is typically reduced to minimize the risk of liver injury. The maximum daily dose is 2 grams or less, with a maximum single dose of 1 gram. However, the exact dosing should be determined on a case-by-case basis, taking into account the severity of the hepatic impairment and other factors. There is some uncertainty in the optimal dosing for patients with severe hepatic impairment, and clinicians should exercise caution when prescribing. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day."}, "forwarded": null}, {"conv": "5fec2453-ea18-49db-82d2-af6f6abc0541", "stage": "interceptor.published.allow", "subject": "axon.pharma.clinical_research.research.reply", "src": "pharma", "tgt": "clinical_research", "at": "2026-09-29T18:09:10.455465Z", "rationale": "Payload cleared by gatekeeper pipeline.", "coaching": null, "sent": {"answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is typically reduced to minimize the risk of liver injury. The maximum daily dose is 2 grams or less, with a maximum single dose of 1 gram. However, the exact dosing should be determined on a case-by-case basis, taking into account the severity of the hepatic impairment and other factors. There is some uncertainty in the optimal dosing for patients with severe hepatic impairment, and clinicians should exercise caution when prescribing. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day."}, "forwarded": {"answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is typically reduced to minimize the risk of liver injury. The maximum daily dose is 2 grams or less, with a maximum single dose of 1 gram. However, the exact dosing should be determined on a case-by-case basis, taking into account the severity of the hepatic impairment and other factors. There is some uncertainty in the optimal dosing for patients with severe hepatic impairment, and clinicians should exercise caution when prescribing. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day."}}]};
+const AUDIT = SNAPSHOT;
+const RUN_INFO = SNAPSHOT.runs || {};
+
+const UNITS = {
+  hq: { name: "Axon Health", kind: "Parent company", status: "live", role: "AI-native medical-technology umbrella company. Runs entirely on Docker, with Ollama serving every model.", facts: [["Runs on", "Docker Compose (Kubernetes-ready)"], ["Model server", "Ollama in development, vLLM planned for production"], ["Rule", "Subsidiaries are separate. They share no databases or model servers."]] },
+  bus: { name: "Inter-Subsidiary Bus", kind: "Governance", status: "live", role: "The only path between subsidiaries. Every message enters the gatekeeper first and is delivered to the target's inbox only if cleared.", facts: [["Technology", "NATS + JetStream"], ["Entry", "axon.gatekeeper.in"], ["Delivery", "axon.gatekeeper.out.<subsidiary>"]] },
+  tier1: { name: "Tier-1 rule engine", kind: "Governance · checkpoint 1", status: "live", role: "Fixed rules, no AI. Strips patient identifiers and blocks attempts to send data outside the network.", facts: [["Detects", "Patient IDs, MRNs, SSNs, dates of birth, phone numbers, emails"], ["Blocks", "External email addresses, URLs, send/email/webhook actions"]], match: "tier1" },
+  hipaa: { name: "HIPAA Agent", kind: "Governance · checkpoint 2", status: "live", role: "AI judge for federal and state HIPAA law. Sees the already-redacted message.", facts: [["Model", "hipaa-judge.v0"], ["Knowledge", "PHI definition, minimum necessary, external disclosure"]], match: "tier2.hipaa" },
+  compliance: { name: "Compliance Agent", kind: "Governance · checkpoint 3", status: "live", role: "AI judge for everything else: FDA marketing, 21 CFR Part 11, IP and trade secrets, SEC/FTC, sanctions.", facts: [["Model", "compliance-judge.v0"], ["Knowledge", "Audit trail, FDA marketing, IP and trade secret"]], match: "tier2.compliance" },
+  audit: { name: "Audit log", kind: "Governance", status: "live", role: "Permanent record of every gatekeeper step. Kept seven years, the HIPAA minimum.", facts: [["Stream", "AUDIT.*"], ["Events so far", `${SNAPSHOT.total_audit_events} (${SNAPSHOT.events.length} from live runs)`]] },
+  incidents: { name: "Incident queue", kind: "Governance", status: "live", role: "Every blocked message opens an incident for a person to review.", facts: [["Stream", "INCIDENT.*"], ["Live incidents", "0"]] },
+  review: { name: "Human review", kind: "Governance", status: "planned", role: "A person approves or denies blocked messages. Next milestone.", facts: [["Subject", "axon.hitl.verdict"]] },
+  cr: { name: "Axon Clinical Research", kind: "Subsidiary", status: "live", role: "Takes clinical cases and owns patient records. Asks Pharma for drug and dosing input.", facts: [["Bus id", "clinical_research"], ["Inbox", "axon.gatekeeper.out.clinical_research"], ["Operator input", "axon.ingress.clinical_research"]], sub: "clinical_research" },
+  cr_sup: { name: "Supervisor", kind: "Axon Clinical Research", status: "live", role: "Routes each case through Intake, then Clinical SME. The only part of the subsidiary allowed to send messages to other subsidiaries.", facts: [["Pipeline", "intake → clinsme"]] },
+  cr_intake: { name: "Intake", kind: "Department · Axon Clinical Research", status: "live", role: "Turns a free-text case into structured fields: question, condition, drug. Patient identifiers are pulled into named fields by fixed rules.", facts: [["Model", "intake.v0"]] },
+  cr_sme: { name: "Clinical SME", kind: "Department · Axon Clinical Research", status: "live", role: "Answers the clinical question. For drug or dosing questions it consults Pharma Research first, and gives no dosing advice if that consult is refused.", facts: [["Model", "clinsme.v0"], ["Consults", "Axon Pharma · Pharma Research"]] },
+  cr_comp: { name: "Compliance department", kind: "Department · Axon Clinical Research", status: "planned", role: "Internal SOP checks for clinical documentation.", facts: [] },
+  ph: { name: "Axon Pharma", kind: "Subsidiary", status: "live", role: "Drug discovery and pharmaceutical research. Answers drug questions from other subsidiaries without ever seeing patient identities.", facts: [["Bus id", "pharma"], ["Inbox", "axon.gatekeeper.out.pharma"]], sub: "pharma" },
+  ph_sup: { name: "Supervisor", kind: "Axon Pharma", status: "live", role: "Receives cleared questions, sends them to the named department, and replies through the gatekeeper.", facts: [] },
+  ph_res: { name: "Pharma Research", kind: "Department · Axon Pharma", status: "live", role: "Answers drug and dosing questions: recommended dose, adjustment for the condition, main safety limit.", facts: [["Model", "pharma-research.v0"]] },
+  ph_mkt: { name: "Marketing", kind: "Department · Axon Pharma", status: "planned", role: "Drug marketing. FDA promotion rules apply, and the Compliance Agent will watch its traffic closely.", facts: [] },
+  ent: { name: "Axon Enterprise", kind: "Subsidiary", status: "idea", role: "Named in the founding brief. Departments not yet defined.", facts: [] },
+  con: { name: "Axon Consumer", kind: "Subsidiary", status: "idea", role: "Named in the founding brief. Departments not yet defined.", facts: [] },
+  fin: { name: "Finance", kind: "Department · not yet placed", status: "idea", role: "Corporate finance, business accounting and law. Named in the brief without a subsidiary.", facts: [] },
+};
+
+const MODELS = [
+  ["hipaa-judge.v0", "HIPAA Agent", "HIPAA rules (3 docs)"],
+  ["compliance-judge.v0", "Compliance Agent", "Compliance policy (3 docs)"],
+  ["intake.v0", "Clinical Research · Intake", "Prompt only"],
+  ["clinsme.v0", "Clinical Research · Clinical SME", "Prompt + Pharma's notes"],
+  ["pharma-research.v0", "Pharma · Pharma Research", "Prompt only"],
+];
+
+const ROADMAP = [
+  ["done", "Gatekeeper layer", "Tier-1 rules, two AI judges, audit and incident streams"],
+  ["done", "Clinical Research ↔ Pharma", "Question redacted on the way out, answer checked on the way back"],
+  ["part", "Clinical Research subsidiary", "Intake and Clinical SME live. Compliance department to come"],
+  ["part", "Pharma subsidiary", "Pharma Research live. Marketing to come"],
+  ["next", "Blocked message → human review", "Next milestone"],
+  ["next", "Operator web interface", "Live version of this console, inside the platform"],
+  ["next", "Per-subsidiary databases", "pgvector"],
+  ["later", "Enterprise and Consumer subsidiaries", "Departments to be defined"],
+  ["later", "Fine-tuned department models", "LoRA per department, deferred"],
+];
+
+
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmtTime = iso => { try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }); } catch { return iso; } };
+const decisionOf = stage => (stage.split(".").pop() === "coached" ? "coach" : stage.split(".").pop());
+const STAGE_NAMES = { "tier1": "Tier-1 rules", "tier2.hipaa": "HIPAA Agent", "tier2.compliance": "Compliance Agent", "interceptor.published": "Delivered", "interceptor.coached": "Stopped, sent back", "interceptor.blocked": "Blocked" };
+const stageName = stage => { for (const k of Object.keys(STAGE_NAMES)) if (stage.startsWith(k)) return STAGE_NAMES[k]; return stage; };
+
+/* ---- runs ---- */
+const runs = (() => {
+  const by = new Map();
+  for (const e of AUDIT.events) { if (!by.has(e.conv)) by.set(e.conv, []); by.get(e.conv).push(e); }
+  return [...by.entries()].map(([id, events]) => {
+    events.sort((a, b) => a.at.localeCompare(b.at));
+    const finals = events.filter(e => e.stage.startsWith("interceptor."));
+    const replyDelivered = finals.some(e => e.stage.startsWith("interceptor.published") && e.subject.endsWith(".reply"));
+    const coached = finals.find(e => e.stage === "interceptor.coached");
+    const outcome = replyDelivered ? "allow" : coached ? "coach" : "redact";
+    const outcomeText = replyDelivered ? "Answered" : coached ? (coached.subject.endsWith(".reply") ? "Answer coached" : "Question coached") : "In progress";
+    return { id, events, outcome, outcomeText, start: events[0].at, note: (RUN_INFO[id] || {}).note || "", answer: (RUN_INFO[id] || {}).final_answer || "" };
+  }).sort((a, b) => a.start.localeCompare(b.start));
+})();
+
+/* ---- map ---- */
+function unitBtn(id, extra = "") {
+  const u = UNITS[id];
+  const model = (u.facts.find(f => f[0] === "Model") || [])[1];
+  return `<button type="button" class="unit ${extra}" data-unit="${id}" aria-pressed="false">
+    <span class="unit-top"><span class="n">${esc(u.name)}</span><span class="status ${u.status}"></span></span>
+    <span class="r">${esc(model ? model : u.kind)}</span></button>`;
+}
+function renderMap() {
+  document.getElementById("map").innerHTML = `
+    ${unitBtn("hq", "hq")}
+    <div class="gov">
+      <div class="flow"><span class="label">Governance</span><span>every message between subsidiaries passes left to right</span></div>
+      <div class="gov-row">${["bus", "tier1", "hipaa", "compliance"].map(id => unitBtn(id)).join("")}</div>
+      <div class="gov-row">${["audit", "incidents", "review"].map(id => unitBtn(id)).join("")}</div>
+    </div>
+    <div class="subs">
+      <div class="sub">${unitBtn("cr", "headunit")}<div class="depts">${["cr_sup", "cr_intake", "cr_sme", "cr_comp"].map(id => unitBtn(id)).join("")}</div></div>
+      <div class="sub">${unitBtn("ph", "headunit")}<div class="depts">${["ph_sup", "ph_res", "ph_mkt"].map(id => unitBtn(id)).join("")}</div></div>
+      <div class="sub idea">${unitBtn("ent", "headunit")}<div class="depts"><span class="r muted" style="padding:6px 8px;font-size:12.5px">Departments not yet defined</span></div></div>
+      <div class="sub idea">${unitBtn("con", "headunit")}<div class="depts">${unitBtn("fin")}</div></div>
+    </div>`;
+  document.querySelectorAll("[data-unit]").forEach(b => b.addEventListener("click", () => selectUnit(b.dataset.unit)));
+}
+function activityFor(u) {
+  if (u.match) {
+    const c = {};
+    AUDIT.events.filter(e => e.stage.startsWith(u.match + ".")).forEach(e => { const d = decisionOf(e.stage); c[d] = (c[d] || 0) + 1; });
+    return Object.entries(c);
+  }
+  if (u.sub) {
+    const sent = AUDIT.events.filter(e => e.src === u.sub && e.stage.startsWith("interceptor.")).length;
+    const got = AUDIT.events.filter(e => e.tgt === u.sub && e.stage.startsWith("interceptor.published")).length;
+    return [["messages sent", sent], ["messages delivered to it", got]];
+  }
+  return null;
+}
+function selectUnit(id) {
+  document.querySelectorAll("[data-unit]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.unit === id)));
+  const u = UNITS[id];
+  const act = activityFor(u);
+  const statusText = { live: "Live", planned: "Planned", idea: "Idea, not scheduled" }[u.status];
+  document.getElementById("inspector").innerHTML = `
+    <span class="label">${esc(u.kind)}</span>
+    <h3>${esc(u.name)}</h3>
+    <span class="status ${u.status}">${statusText}</span>
+    <p style="margin:0">${esc(u.role)}</p>
+    ${u.facts.length ? `<dl class="kv">${u.facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd class="${/[._]/.test(v) && !/ /.test(v) ? "mono" : ""}">${esc(v)}</dd>`).join("")}</dl>` : ""}
+    ${act ? `<div style="display:grid;gap:6px"><span class="label">Live-run activity</span><div class="legend">${act.map(([k, v]) =>
+      ["allow", "redact", "coach", "block"].includes(k) ? `<span class="pill ${k}">${k} × ${v}</span>` : `<span class="pill" style="border-color:var(--rule)">${v} ${esc(k)}</span>`).join("")}</div></div>` : ""}`;
+}
+
+/* ---- traffic ---- */
+function renderRuns() {
+  document.getElementById("runs").innerHTML = runs.map((r, i) => `
+    <button type="button" class="run" data-run="${r.id}" aria-pressed="false">
+      <span class="line"><span class="t">Run ${i + 1} · ${fmtTime(r.start)}</span><span class="pill ${r.outcome}">${r.outcomeText}</span></span>
+      <span class="lesson">${esc(r.note)}</span>
+    </button>`).join("");
+  document.querySelectorAll("[data-run]").forEach(b => b.addEventListener("click", () => selectRun(b.dataset.run)));
+}
+function payloadBox(title, obj, removed = []) {
+  const lines = Object.entries(obj || {}).map(([k, v]) => {
+    const text = `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`;
+    return removed.includes(k) ? `<span class="gone">${esc(text)}</span>` : esc(text);
+  });
+  return `<div class="box"><span class="label">${esc(title)}</span><pre>${lines.join("\n")}</pre></div>`;
+}
+function selectRun(id) {
+  document.querySelectorAll("[data-run]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.run === id)));
+  const r = runs.find(x => x.id === id);
+  document.getElementById("trace-sub").innerHTML = `conversation <span class="mono">${esc(id.slice(0, 8))}</span>`;
+  const legs = [["query", "Question", "Clinical Research → Pharma"], ["reply", "Answer", "Pharma → Clinical Research"]];
+  let html = "";
+  for (const [verb, title, dir] of legs) {
+    const ev = r.events.filter(e => e.subject.endsWith("." + verb));
+    if (!ev.length) {
+      html += `<div class="leg"><h3>${title} <span class="muted">${dir}</span></h3><p class="muted" style="margin:6px 0 0">Not sent. The question was stopped, so Pharma never answered.</p></div>`;
+      continue;
+    }
+    html += `<div class="leg"><h3>${title} <span class="muted">${dir}</span> <span class="mono muted">${esc(ev[0].subject)}</span></h3><ol class="steps">` +
+      ev.map(e => {
+        const d = decisionOf(e.stage);
+        const why = e.rationale || (d === "allow" ? "Allowed. The judge gave no reason." : "The judge gave no reason.");
+        const coachLine = e.coaching && d === "coach" ? `<br><em>Asked the sender:</em> ${esc(e.coaching)}` : "";
+        return `<li class="step"><span class="t">${fmtTime(e.at)}</span><span class="who">${stageName(e.stage)}<span class="pill ${d === "published" ? "allow" : d}">${d}</span></span><span class="why">${esc(why)}${coachLine}</span></li>`;
+      }).join("") + `</ol>`;
+    const delivered = ev.find(e => e.stage.startsWith("interceptor.published"));
+    if (verb === "query" && delivered) {
+      const removed = Object.keys(delivered.sent).filter(k => !(k in (delivered.forwarded || {})));
+      html += `<div class="diff" style="margin-top:10px">${payloadBox("Sent by Clinical Research", delivered.sent, removed)}${payloadBox("Delivered to Pharma", delivered.forwarded)}</div>`;
+    }
+    html += `</div>`;
+  }
+  if (r.answer) {
+    html += `<div class="leg"><h3>Final answer <span class="muted">Clinical SME</span></h3><p class="answer">${esc(r.answer)}</p></div>`;
+  }
+  document.getElementById("trace").innerHTML = html;
+}
+
+/* ---- verdict mix ---- */
+function renderMix() {
+  const rows = [["Tier-1 rules", "tier1."], ["HIPAA Agent", "tier2.hipaa."], ["Compliance Agent", "tier2.compliance."]];
+  const order = ["allow", "redact", "coach", "block"];
+  document.getElementById("mix").innerHTML = rows.map(([name, prefix]) => {
+    const ev = AUDIT.events.filter(e => e.stage.startsWith(prefix));
+    const c = Object.fromEntries(order.map(k => [k, ev.filter(e => decisionOf(e.stage) === k).length]));
+    const total = ev.length || 1;
+    return `<div class="mix-row"><span>${name} <span class="muted mono">${ev.length}</span></span>
+      <div class="bar" role="img" aria-label="${name}: ${order.filter(k => c[k]).map(k => `${c[k]} ${k}`).join(", ")}">
+      ${order.filter(k => c[k]).map(k => `<span class="${k}" style="width:${(c[k] / total) * 100}%">${c[k]}</span>`).join("")}</div></div>`;
+  }).join("");
+  document.getElementById("mix-sub").textContent = `${AUDIT.events.filter(e => /^tier/.test(e.stage)).length} checks across ${runs.length} live runs`;
+}
+
+function renderStatic() {
+  document.getElementById("models").innerHTML = MODELS.map(([m, u, k]) => `<tr><td class="mono">${m}</td><td>${esc(u)}</td><td class="muted">${esc(k)}</td></tr>`).join("");
+  const label = { done: "Done", part: "Partly done", next: "Planned", later: "Later" };
+  document.getElementById("roadmap").innerHTML = ROADMAP.map(([s, n, d]) => `<div class="ms ${s}"><span class="label">${label[s]}</span><span class="n">${esc(n)}</span><span class="muted" style="font-size:12.5px">${esc(d)}</span></div>`).join("");
+  const done = runs.filter(r => r.outcome === "allow").length;
+  document.getElementById("k-runs").textContent = runs.length;
+  document.getElementById("k-runs-d").textContent = `${done} answered end to end, ${runs.length - done} coached`;
+  const day = new Date(SNAPSHOT.generated_at).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
+  document.getElementById("stamp").textContent = day;
+  document.getElementById("stamp-rev").textContent = SNAPSHOT.revision || "";
+  const excluded = SNAPSHOT.total_audit_events - SNAPSHOT.events.length;
+  document.getElementById("source-note").textContent = `Source: the Axon-Health repo and its AUDIT stream, ${day}. The ${runs.length} runs shown are every live run with real models. The ${excluded} other audit events came from automated tests with stand-in judges and are left out.`;
+}
+
+renderMap();
+renderRuns();
+renderMix();
+renderStatic();
+selectUnit("cr");
+selectRun(runs.find(r => r.outcome === "allow")?.id || runs[0].id);
+</script>

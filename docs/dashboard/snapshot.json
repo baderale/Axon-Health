@@ -1,0 +1,435 @@
+{
+  "generated_at": "2026-09-29T19:08:43+00:00",
+  "revision": "branch milestone-2-subsidiaries \u00b7 a3f5d81",
+  "total_audit_events": 180,
+  "runs": {
+    "0befde17-56d9-4713-b9e0-521a634954d8": {
+      "note": "Compliance meant to allow but wrote \"ALLOW\" in capitals. Fixed: the parser accepts any case.",
+      "final_answer": ""
+    },
+    "5fec2453-ea18-49db-82d2-af6f6abc0541": {
+      "note": "Answered end to end. Identifiers removed going out, answer allowed coming back.",
+      "final_answer": "Based on the pharmacology notes from Axon Pharma, the safe dosing window for acetaminophen is a maximum daily dose of 2 grams or less, with a maximum single dose of 1 gram. This is particularly important for patients with hepatic impairment, as higher doses can increase the risk of liver injury. However, it's worth noting that there is some uncertainty in the optimal dosing for patients with severe hepatic impairment."
+    },
+    "b63ec4bd-657d-4430-93e0-c7167fde5a3c": {
+      "note": "Compliance saw the MRN that Tier-1 had already removed. Fixed: judges now see the redacted message.",
+      "final_answer": ""
+    },
+    "ef9e7baa-b449-4796-9f78-8091f35eec56": {
+      "note": "Question went through. Pharma's answer was coached as possible drug marketing. Fixed: judges are told who is answering whom.",
+      "final_answer": ""
+    }
+  },
+  "events": [
+    {
+      "conv": "b63ec4bd-657d-4430-93e0-c7167fde5a3c",
+      "stage": "tier1.redact",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:05:12.770559Z",
+      "rationale": "PHI identifiers detected by deterministic policy. Redacted inflight; escalating to LLM judges for semantic context check.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "b63ec4bd-657d-4430-93e0-c7167fde5a3c",
+      "stage": "tier2.hipaa.redact",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:05:23.236456Z",
+      "rationale": "Patient identifiers (patient_id, mrn) must be removed to comply with the Minimum Necessary Standard.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "b63ec4bd-657d-4430-93e0-c7167fde5a3c",
+      "stage": "tier2.compliance.coach",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:05:30.848441Z",
+      "rationale": "",
+      "coaching": "The payload references a patient's medical record (MRN-AX-99182) and condition (hepatic impairment). Is this for internal scientific discussion or external promotional copy? Please specify the intended use case to proceed.",
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "b63ec4bd-657d-4430-93e0-c7167fde5a3c",
+      "stage": "interceptor.coached",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:05:30.850268Z",
+      "rationale": "",
+      "coaching": "The payload references a patient's medical record (MRN-AX-99182) and condition (hepatic impairment). Is this for internal scientific discussion or external promotional copy? Please specify the intended use case to proceed.",
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "ef9e7baa-b449-4796-9f78-8091f35eec56",
+      "stage": "tier1.redact",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:06:12.991855Z",
+      "rationale": "PHI identifiers detected by deterministic policy. Redacted inflight; escalating to LLM judges for semantic context check.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "ef9e7baa-b449-4796-9f78-8091f35eec56",
+      "stage": "tier2.hipaa.redact",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:06:21.572901Z",
+      "rationale": "Patient identifiers (patient_id, mrn) must be redacted to comply with the Minimum Necessary Standard.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "ef9e7baa-b449-4796-9f78-8091f35eec56",
+      "stage": "tier2.compliance.allow",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:06:24.783104Z",
+      "rationale": "The payload references a legitimate internal scientific discussion between Clinical Research and Pharma Research. The discussion is about a specific condition and a drug, and the question is about safe dosing, which is a valid topic for internal discussion.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "ef9e7baa-b449-4796-9f78-8091f35eec56",
+      "stage": "interceptor.published.redact",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:06:24.784836Z",
+      "rationale": "Payload redacted by gatekeeper pipeline.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": {
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      }
+    },
+    {
+      "conv": "ef9e7baa-b449-4796-9f78-8091f35eec56",
+      "stage": "tier1.allow",
+      "subject": "axon.pharma.clinical_research.research.reply",
+      "src": "pharma",
+      "tgt": "clinical_research",
+      "at": "2026-09-29T18:06:33.624885Z",
+      "rationale": "Clean payload crossing subsidiary boundary; escalate to LLM judges.",
+      "coaching": null,
+      "sent": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is 500-1000 mg every 6 hours, not to exceed 4 grams per day. However, due to the potential for increased risk of liver injury, we recommend starting with the lower end of this range (500 mg every 6 hours) and monitoring liver function closely. There is limited data on the safe dosing of acetaminophen in patients with severe hepatic impairment, and caution is advised. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day, even in patients without pre-existing liver disease. We note that the FDA has established a maximum daily dose of 4 grams for acetaminophen in patients with normal liver function, but this limit may need to be adjusted in patients with hepatic impairment."
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "ef9e7baa-b449-4796-9f78-8091f35eec56",
+      "stage": "tier2.hipaa.allow",
+      "subject": "axon.pharma.clinical_research.research.reply",
+      "src": "pharma",
+      "tgt": "clinical_research",
+      "at": "2026-09-29T18:06:47.214421Z",
+      "rationale": "The payload contains clinical information about acetaminophen dosing, which is necessary for the clinical research team to provide informed guidance. No PHI is present in the payload.",
+      "coaching": null,
+      "sent": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is 500-1000 mg every 6 hours, not to exceed 4 grams per day. However, due to the potential for increased risk of liver injury, we recommend starting with the lower end of this range (500 mg every 6 hours) and monitoring liver function closely. There is limited data on the safe dosing of acetaminophen in patients with severe hepatic impairment, and caution is advised. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day, even in patients without pre-existing liver disease. We note that the FDA has established a maximum daily dose of 4 grams for acetaminophen in patients with normal liver function, but this limit may need to be adjusted in patients with hepatic impairment."
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "ef9e7baa-b449-4796-9f78-8091f35eec56",
+      "stage": "tier2.compliance.coach",
+      "subject": "axon.pharma.clinical_research.research.reply",
+      "src": "pharma",
+      "tgt": "clinical_research",
+      "at": "2026-09-29T18:07:02.559450Z",
+      "rationale": "",
+      "coaching": "The payload contains a statement about the recommended dosing of acetaminophen in patients with hepatic impairment. Please specify whether this is for internal scientific discussion or external promotional copy. If external, ensure it complies with FDA marketing restrictions.",
+      "sent": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is 500-1000 mg every 6 hours, not to exceed 4 grams per day. However, due to the potential for increased risk of liver injury, we recommend starting with the lower end of this range (500 mg every 6 hours) and monitoring liver function closely. There is limited data on the safe dosing of acetaminophen in patients with severe hepatic impairment, and caution is advised. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day, even in patients without pre-existing liver disease. We note that the FDA has established a maximum daily dose of 4 grams for acetaminophen in patients with normal liver function, but this limit may need to be adjusted in patients with hepatic impairment."
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "ef9e7baa-b449-4796-9f78-8091f35eec56",
+      "stage": "interceptor.coached",
+      "subject": "axon.pharma.clinical_research.research.reply",
+      "src": "pharma",
+      "tgt": "clinical_research",
+      "at": "2026-09-29T18:07:02.559862Z",
+      "rationale": "",
+      "coaching": "The payload contains a statement about the recommended dosing of acetaminophen in patients with hepatic impairment. Please specify whether this is for internal scientific discussion or external promotional copy. If external, ensure it complies with FDA marketing restrictions.",
+      "sent": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is 500-1000 mg every 6 hours, not to exceed 4 grams per day. However, due to the potential for increased risk of liver injury, we recommend starting with the lower end of this range (500 mg every 6 hours) and monitoring liver function closely. There is limited data on the safe dosing of acetaminophen in patients with severe hepatic impairment, and caution is advised. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day, even in patients without pre-existing liver disease. We note that the FDA has established a maximum daily dose of 4 grams for acetaminophen in patients with normal liver function, but this limit may need to be adjusted in patients with hepatic impairment."
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "0befde17-56d9-4713-b9e0-521a634954d8",
+      "stage": "tier1.redact",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:07:56.265287Z",
+      "rationale": "PHI identifiers detected by deterministic policy. Redacted inflight; escalating to LLM judges for semantic context check.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "0befde17-56d9-4713-b9e0-521a634954d8",
+      "stage": "tier2.hipaa.redact",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:08:01.418698Z",
+      "rationale": "The payload contains patient identifiers (patient_id, mrn) that are not necessary for the intended purpose of the query.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "0befde17-56d9-4713-b9e0-521a634954d8",
+      "stage": "tier2.compliance.coach",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:08:03.801411Z",
+      "rationale": "Judge output failed schema validation: 'ALLOW' is not a valid Decision",
+      "coaching": "Internal judge schema error; please retry.",
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "0befde17-56d9-4713-b9e0-521a634954d8",
+      "stage": "interceptor.coached",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:08:03.802020Z",
+      "rationale": "Judge output failed schema validation: 'ALLOW' is not a valid Decision",
+      "coaching": "Internal judge schema error; please retry.",
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "5fec2453-ea18-49db-82d2-af6f6abc0541",
+      "stage": "tier1.redact",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:08:32.766985Z",
+      "rationale": "PHI identifiers detected by deterministic policy. Redacted inflight; escalating to LLM judges for semantic context check.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "5fec2453-ea18-49db-82d2-af6f6abc0541",
+      "stage": "tier2.hipaa.redact",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:08:36.282635Z",
+      "rationale": "Patient identifiers (patient_id, mrn) must be redacted to comply with the Minimum Necessary Standard.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "5fec2453-ea18-49db-82d2-af6f6abc0541",
+      "stage": "tier2.compliance.allow",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:08:38.153813Z",
+      "rationale": "Internal exchange between Axon Health subsidiaries (clinical_research and pharma) for legitimate scientific discussion. No PHI leakage or marketing claims detected.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "5fec2453-ea18-49db-82d2-af6f6abc0541",
+      "stage": "interceptor.published.redact",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-09-29T18:08:38.154183Z",
+      "rationale": "Payload redacted by gatekeeper pipeline.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      },
+      "forwarded": {
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen?"
+      }
+    },
+    {
+      "conv": "5fec2453-ea18-49db-82d2-af6f6abc0541",
+      "stage": "tier1.allow",
+      "subject": "axon.pharma.clinical_research.research.reply",
+      "src": "pharma",
+      "tgt": "clinical_research",
+      "at": "2026-09-29T18:08:44.400096Z",
+      "rationale": "Clean payload crossing subsidiary boundary; escalate to LLM judges.",
+      "coaching": null,
+      "sent": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is typically reduced to minimize the risk of liver injury. The maximum daily dose is 2 grams or less, with a maximum single dose of 1 gram. However, the exact dosing should be determined on a case-by-case basis, taking into account the severity of the hepatic impairment and other factors. There is some uncertainty in the optimal dosing for patients with severe hepatic impairment, and clinicians should exercise caution when prescribing. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day."
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "5fec2453-ea18-49db-82d2-af6f6abc0541",
+      "stage": "tier2.hipaa.allow",
+      "subject": "axon.pharma.clinical_research.research.reply",
+      "src": "pharma",
+      "tgt": "clinical_research",
+      "at": "2026-09-29T18:08:58.322753Z",
+      "rationale": "The payload contains clinical information and does not contain any PHI. The exchange is between Axon Health subsidiaries, which is permitted under the BAA.",
+      "coaching": "Consider redacting the specific medication name (acetaminophen) for future exchanges to minimize PHI exposure.",
+      "sent": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is typically reduced to minimize the risk of liver injury. The maximum daily dose is 2 grams or less, with a maximum single dose of 1 gram. However, the exact dosing should be determined on a case-by-case basis, taking into account the severity of the hepatic impairment and other factors. There is some uncertainty in the optimal dosing for patients with severe hepatic impairment, and clinicians should exercise caution when prescribing. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day."
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "5fec2453-ea18-49db-82d2-af6f6abc0541",
+      "stage": "tier2.compliance.allow",
+      "subject": "axon.pharma.clinical_research.research.reply",
+      "src": "pharma",
+      "tgt": "clinical_research",
+      "at": "2026-09-29T18:09:10.454317Z",
+      "rationale": "",
+      "coaching": null,
+      "sent": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is typically reduced to minimize the risk of liver injury. The maximum daily dose is 2 grams or less, with a maximum single dose of 1 gram. However, the exact dosing should be determined on a case-by-case basis, taking into account the severity of the hepatic impairment and other factors. There is some uncertainty in the optimal dosing for patients with severe hepatic impairment, and clinicians should exercise caution when prescribing. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day."
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "5fec2453-ea18-49db-82d2-af6f6abc0541",
+      "stage": "interceptor.published.allow",
+      "subject": "axon.pharma.clinical_research.research.reply",
+      "src": "pharma",
+      "tgt": "clinical_research",
+      "at": "2026-09-29T18:09:10.455465Z",
+      "rationale": "Payload cleared by gatekeeper pipeline.",
+      "coaching": null,
+      "sent": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is typically reduced to minimize the risk of liver injury. The maximum daily dose is 2 grams or less, with a maximum single dose of 1 gram. However, the exact dosing should be determined on a case-by-case basis, taking into account the severity of the hepatic impairment and other factors. There is some uncertainty in the optimal dosing for patients with severe hepatic impairment, and clinicians should exercise caution when prescribing. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day."
+      },
+      "forwarded": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is typically reduced to minimize the risk of liver injury. The maximum daily dose is 2 grams or less, with a maximum single dose of 1 gram. However, the exact dosing should be determined on a case-by-case basis, taking into account the severity of the hepatic impairment and other factors. There is some uncertainty in the optimal dosing for patients with severe hepatic impairment, and clinicians should exercise caution when prescribing. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day."
+      }
+    }
+  ]
+}
