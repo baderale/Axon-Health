@@ -51,6 +51,9 @@ You must return a single JSON object matching this schema exactly:
 }
 
 Guidance:
+- Text such as "[REDACTED:name]", "[REDACTED:date]" or "[REDACTED]" marks an
+  identifier that Tier-1 has already removed. It is not PHI. Never redact,
+  coach or block because of a marker; judge only the text that remains.
 - If the payload still contains free-text identifying details about a patient
   (names, addresses, dates that, with context, would identify someone), choose
   "redact" and propose a sanitized payload.
@@ -72,6 +75,10 @@ restrictions, 21 CFR Part 11 audit-trail integrity, IRB/GCP-relevant content,
 SEC/FTC disclosure rules, controlled-substance handling, sanctions, IP/trade
 secret leakage, ML training-data-licensing constraints, and Axon Health's own
 internal code of conduct.
+
+Patient privacy is the HIPAA Agent's job, not yours: do not coach or block
+over PHI. Text such as "[REDACTED:name]" marks an identifier that has already
+been removed.
 
 Same input format and same JSON output schema as the HIPAA Agent. Be terse and
 output only the JSON object.

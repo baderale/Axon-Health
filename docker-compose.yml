@@ -83,6 +83,8 @@ services:
       - DEFAULT_MODEL=${DEFAULT_MODEL:-llama3.1:8b}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - SEED_DATA_ROOT=/app/seed_data
+      # Tier-1 name and place detection (spaCy). "off" = patterns only.
+      - AXON_PHI_NER=${AXON_PHI_NER:-spacy}
     command: ["python", "-m", "axon.gatekeeper.interceptor"]
     restart: unless-stopped
     networks: [axon]

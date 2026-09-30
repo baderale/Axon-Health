@@ -3,6 +3,7 @@
 Examples:
     python -m axon.tools.fake_publisher allow
     python -m axon.tools.fake_publisher redact
+    python -m axon.tools.fake_publisher safe-harbor
     python -m axon.tools.fake_publisher block
     python -m axon.tools.fake_publisher intra
 
@@ -48,6 +49,21 @@ SCENARIOS: dict[str, GatekeeperRequest] = {
             "question": (
                 "For patient_id 12345 (MRN MRN-AX-99182) presenting with hepatic "
                 "impairment, what is the safe dosing window for acetaminophen?"
+            ),
+        },
+    ),
+    # A free-text note carrying identifiers the milestone-2 rules missed: a
+    # name, a street address, a city, a date of birth, a relative's name.
+    "safe-harbor": GatekeeperRequest(
+        source_subsidiary="clinical_research",
+        target_subsidiary="pharma",
+        subject="axon.clinical_research.pharma.research.query",
+        payload={
+            "drug": "acetaminophen",
+            "question": (
+                "Maria Gonzalez, DOB 03/14/1968, of 42 Oak Street, Springfield, IL, "
+                "58 year old with hepatic impairment. Her daughter Ana Gonzalez asks: "
+                "what is the safe dosing window for acetaminophen?"
             ),
         },
     ),
