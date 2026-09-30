@@ -83,6 +83,11 @@ The judges' knowledge is keyword retrieval over `seed_data/<profile>/*.md` (`axo
 - **The 8B Compliance judge coaches any message that shows a redaction**, whatever the marker says (milestone 3). A `safe-harbor` fake-publisher run ends in coach. The `ask` flow passes only because Intake restates the question without identifiers first.
 - **Pages meant to be shared must never contain real patient data.** Use the synthetic identifiers `patient_id 12345` / `MRN-AX-99182`.
 
+## Branches and config
+
+- **`main` holds everything.** Milestones 2 and 3 were built on `milestone-*` branches and fast-forwarded into `main` on 2026-09-30. Start each milestone on a new `milestone-NN-*` branch off `main`, fast-forward `main` when it lands, then delete the branch.
+- **`.env.example` lists only variables the code or `docker-compose.yml` reads.** The unused Postgres DSN, judge-model names and `TIER1_ESCALATE_AMBIGUOUS` were removed on 2026-09-30. Judge models are set in the Model Registry, not by environment. A variable in `.env` reaches a container only if that service's `environment:` block passes it through, as `AXON_PHI_NER` is for the interceptor.
+
 ## When a milestone lands
 
 Update the README roadmap, add `docs/milestones/NN-*.md` with acceptance criteria and a live-run record, and update the dashboards. The structure diagram, headline numbers and roadmap cards in `docs/dashboard/console.template.html` are hand-written. `docs/about.md` and the console's About section must stay in step.
