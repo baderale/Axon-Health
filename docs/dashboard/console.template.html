@@ -274,6 +274,8 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
         <h3 style="font-size:15px;font-weight:600">Goals</h3>
         <ol class="goals">
           <li><span class="tag done">Done</span><span>Prove that two subsidiaries can share clinical knowledge with patient identifiers removed automatically.</span></li>
+          <li><span class="tag done">Done</span><span>Catch every kind of patient identifier HIPAA lists (names, addresses, dates, ID numbers and 14 more), and measure it: 83% on messages the system had never seen, up from 18%.</span></li>
+          <li><span class="tag next">Next</span><span>Measure the AI gatekeepers' decisions the same way, and fix them rejecting safe messages once identifiers have been removed.</span></li>
           <li><span class="tag next">Next</span><span>Put a person in the loop: every blocked message goes to a human reviewer who approves or denies it.</span></li>
           <li><span class="tag next">Next</span><span>Give operators a live console inside the platform, like this page but updating in real time.</span></li>
           <li><span class="tag later">Later</span><span>Give each department its own fine-tuned model instead of a shared base model.</span></li>
@@ -435,7 +437,8 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
     <div class="kpi"><span class="label">Departments live</span><span class="v">3 <small>of 5 planned</small></span><span class="d">Intake, Clinical SME, Pharma Research</span></div>
     <div class="kpi"><span class="label">Live runs checked</span><span class="v" id="k-runs">4</span><span class="d" id="k-runs-d">1 answered end to end, 3 coached</span></div>
     <div class="kpi good"><span class="label">Identifiers reaching Pharma</span><span class="v">0</span><span class="d">Patient ID and MRN removed on every run</span></div>
-    <div class="kpi good"><span class="label">Automated tests</span><span class="v">37 <small>/ 37</small></span><span class="d">28 unit, 9 on a real message bus</span></div>
+    <div class="kpi good"><span class="label">Patient identifiers caught</span><span class="v">83% <small>of 187</small></span><span class="d">On 100 cases never tuned on; the old rules caught 18%</span></div>
+    <div class="kpi good"><span class="label">Automated tests</span><span class="v">88 <small>/ 88</small></span><span class="d">79 unit, 9 on a real message bus</span></div>
   </section>
 
   <div class="row">
@@ -495,7 +498,7 @@ const RUN_INFO = SNAPSHOT.runs || {};
 const UNITS = {
   hq: { name: "Axon Health", kind: "Parent company", status: "live", role: "AI-native medical-technology umbrella company. Runs entirely on Docker, with Ollama serving every model.", facts: [["Runs on", "Docker Compose (Kubernetes-ready)"], ["Model server", "Ollama in development, vLLM planned for production"], ["Rule", "Subsidiaries are separate. They share no databases or model servers."]] },
   bus: { name: "Inter-Subsidiary Bus", kind: "Governance", status: "live", role: "The only path between subsidiaries. Every message enters the gatekeeper first and is delivered to the target's inbox only if cleared.", facts: [["Technology", "NATS + JetStream"], ["Entry", "axon.gatekeeper.in"], ["Delivery", "axon.gatekeeper.out.<subsidiary>"]] },
-  tier1: { name: "Tier-1 rule engine", kind: "Governance · checkpoint 1", status: "live", role: "Fixed rules, no AI. Strips patient identifiers and blocks attempts to send data outside the network.", facts: [["Detects", "Patient IDs, MRNs, SSNs, dates of birth, phone numbers, emails"], ["Blocks", "External email addresses, URLs, send/email/webhook actions"]], match: "tier1" },
+  tier1: { name: "Tier-1 rule engine", kind: "Governance · checkpoint 1", status: "live", role: "Fixed rules plus a small name-recognition model, no AI judge. Strips patient identifiers before any AI sees the message, and blocks attempts to send data outside the network.", facts: [["Detects", "All 18 HIPAA Safe Harbor identifiers: names, addresses, dates, phone, email, SSN, MRN, plan, account, licence, vehicle and device numbers, URLs, IP addresses, biometrics, photos, other IDs"], ["Measured", "82.9% caught, 1.5% of clinical text altered, on 100 unseen cases"], ["Blocks", "External email addresses, URLs, send/email/webhook actions"]], match: "tier1" },
   hipaa: { name: "HIPAA Agent", kind: "Governance · checkpoint 2", status: "live", role: "AI judge for federal and state HIPAA law. Sees the already-redacted message.", facts: [["Model", "hipaa-judge.v0"], ["Knowledge", "PHI definition, minimum necessary, external disclosure"]], match: "tier2.hipaa" },
   compliance: { name: "Compliance Agent", kind: "Governance · checkpoint 3", status: "live", role: "AI judge for everything else: FDA marketing, 21 CFR Part 11, IP and trade secrets, SEC/FTC, sanctions.", facts: [["Model", "compliance-judge.v0"], ["Knowledge", "Audit trail, FDA marketing, IP and trade secret"]], match: "tier2.compliance" },
   audit: { name: "Audit log", kind: "Governance", status: "live", role: "Permanent record of every gatekeeper step. Kept seven years, the HIPAA minimum.", facts: [["Stream", "AUDIT.*"], ["Events so far", `${SNAPSHOT.total_audit_events} (${SNAPSHOT.events.length} from live runs)`]] },
@@ -526,6 +529,8 @@ const MODELS = [
 const ROADMAP = [
   ["done", "Gatekeeper layer", "Tier-1 rules, two AI judges, audit and incident streams"],
   ["done", "Clinical Research ↔ Pharma", "Question redacted on the way out, answer checked on the way back"],
+  ["done", "All 18 HIPAA identifiers", "Names, addresses, dates and 15 more. 83% caught on unseen cases, up from 18%"],
+  ["next", "Measure the AI judges", "They stop safe messages once identifiers are removed"],
   ["part", "Clinical Research subsidiary", "Intake and Clinical SME live. Compliance department to come"],
   ["part", "Pharma subsidiary", "Pharma Research live. Marketing to come"],
   ["next", "Blocked message → human review", "Next milestone"],
