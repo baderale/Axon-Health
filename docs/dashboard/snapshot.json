@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-29T19:08:43+00:00",
-  "revision": "branch milestone-2-subsidiaries \u00b7 a3f5d81",
-  "total_audit_events": 180,
+  "generated_at": "2026-10-22T14:38:18+00:00",
+  "revision": "branch milestone-04-judge-eval \u00b7 0f56a3e",
+  "total_audit_events": 284,
   "runs": {
     "0befde17-56d9-4713-b9e0-521a634954d8": {
       "note": "Compliance meant to allow but wrote \"ALLOW\" in capitals. Fixed: the parser accepts any case.",
@@ -18,6 +18,10 @@
     "ef9e7baa-b449-4796-9f78-8091f35eec56": {
       "note": "Question went through. Pharma's answer was coached as possible drug marketing. Fixed: judges are told who is answering whom.",
       "final_answer": ""
+    },
+    "e5e074d3-1c92-455d-9ab7-0a4317df1da3": {
+      "note": "Answered end to end in 17 seconds with the qwen3.6:35b judges (milestone 4). Identifiers removed going out, answer allowed coming back.",
+      "final_answer": "Based on the pharmacology notes from Axon Pharma, the safe dosing window for acetaminophen in patients with hepatic impairment is a maximum of 2 grams per day, divided into 2-3 doses, with a maximum single dose of 1 gram. This is a reduction from the standard maximum dose to mitigate the potential for increased risk of liver injury in patients with compromised liver function. However, it's essential to note that there is some uncertainty in this recommendation due to limited studies and potential variability in individual patient risks."
     }
   },
   "events": [
@@ -430,6 +434,143 @@
       "forwarded": {
         "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is typically reduced to minimize the risk of liver injury. The maximum daily dose is 2 grams or less, with a maximum single dose of 1 gram. However, the exact dosing should be determined on a case-by-case basis, taking into account the severity of the hepatic impairment and other factors. There is some uncertainty in the optimal dosing for patients with severe hepatic impairment, and clinicians should exercise caution when prescribing. The main safety limit is the risk of liver injury, which can occur at doses above 4 grams per day."
       }
+    },
+    {
+      "conv": "e5e074d3-1c92-455d-9ab7-0a4317df1da3",
+      "stage": "tier1.redact",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-10-22T14:34:29.077506Z",
+      "rationale": "PHI identifiers detected by deterministic policy. Redacted inflight; escalating to LLM judges for semantic context check.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen in patients with hepatic impairment?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "e5e074d3-1c92-455d-9ab7-0a4317df1da3",
+      "stage": "tier2.hipaa.allow",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-10-22T14:34:32.614637Z",
+      "rationale": "The payload contains only clinical context and de-identified markers, with no remaining patient identifiers.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen in patients with hepatic impairment?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "e5e074d3-1c92-455d-9ab7-0a4317df1da3",
+      "stage": "tier2.compliance.allow",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-10-22T14:34:34.124979Z",
+      "rationale": "The message contains a clinical question regarding on-label dosing for an approved drug, which is permitted internal scientific/clinical work and does not involve marketing, trade secrets, or audit trail violations.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen in patients with hepatic impairment?"
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "e5e074d3-1c92-455d-9ab7-0a4317df1da3",
+      "stage": "interceptor.published.redact",
+      "subject": "axon.clinical_research.pharma.research.query",
+      "src": "clinical_research",
+      "tgt": "pharma",
+      "at": "2026-10-22T14:34:34.125998Z",
+      "rationale": "Payload redacted by gatekeeper pipeline.",
+      "coaching": null,
+      "sent": {
+        "patient_id": "12345",
+        "mrn": "MRN-AX-99182",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen in patients with hepatic impairment?"
+      },
+      "forwarded": {
+        "patient_id": "[REDACTED]",
+        "mrn": "[REDACTED]",
+        "condition": "hepatic impairment",
+        "drug": "acetaminophen",
+        "question": "What is the safe dosing window for acetaminophen in patients with hepatic impairment?"
+      }
+    },
+    {
+      "conv": "e5e074d3-1c92-455d-9ab7-0a4317df1da3",
+      "stage": "tier1.allow",
+      "subject": "axon.pharma.clinical_research.research.reply",
+      "src": "pharma",
+      "tgt": "clinical_research",
+      "at": "2026-10-22T14:34:37.007431Z",
+      "rationale": "Clean payload crossing subsidiary boundary; escalate to LLM judges.",
+      "coaching": null,
+      "sent": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is a maximum of 2 grams per day, divided into 2-3 doses, with a maximum single dose of 1 gram. This is a reduction from the standard maximum dose of 4 grams per day. The adjustment is based on the potential for increased risk of liver injury in patients with compromised liver function. However, it's essential to note that there is some uncertainty in this recommendation, as the evidence is based on limited studies and may not fully capture the risks in all patients with hepatic impairment. The main safety limit is the risk of liver injury, which can be severe and potentially life-threatening."
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "e5e074d3-1c92-455d-9ab7-0a4317df1da3",
+      "stage": "tier2.hipaa.allow",
+      "subject": "axon.pharma.clinical_research.research.reply",
+      "src": "pharma",
+      "tgt": "clinical_research",
+      "at": "2026-10-22T14:34:38.496877Z",
+      "rationale": "The payload contains only general clinical guidance and does not include any patient-specific identifiers or PHI.",
+      "coaching": null,
+      "sent": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is a maximum of 2 grams per day, divided into 2-3 doses, with a maximum single dose of 1 gram. This is a reduction from the standard maximum dose of 4 grams per day. The adjustment is based on the potential for increased risk of liver injury in patients with compromised liver function. However, it's essential to note that there is some uncertainty in this recommendation, as the evidence is based on limited studies and may not fully capture the risks in all patients with hepatic impairment. The main safety limit is the risk of liver injury, which can be severe and potentially life-threatening."
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "e5e074d3-1c92-455d-9ab7-0a4317df1da3",
+      "stage": "tier2.compliance.allow",
+      "subject": "axon.pharma.clinical_research.research.reply",
+      "src": "pharma",
+      "tgt": "clinical_research",
+      "at": "2026-10-22T14:34:39.820538Z",
+      "rationale": "The message contains clinical dosing guidance for an approved drug (acetaminophen) exchanged between internal research departments, which is permitted under the policy.",
+      "coaching": null,
+      "sent": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is a maximum of 2 grams per day, divided into 2-3 doses, with a maximum single dose of 1 gram. This is a reduction from the standard maximum dose of 4 grams per day. The adjustment is based on the potential for increased risk of liver injury in patients with compromised liver function. However, it's essential to note that there is some uncertainty in this recommendation, as the evidence is based on limited studies and may not fully capture the risks in all patients with hepatic impairment. The main safety limit is the risk of liver injury, which can be severe and potentially life-threatening."
+      },
+      "forwarded": null
+    },
+    {
+      "conv": "e5e074d3-1c92-455d-9ab7-0a4317df1da3",
+      "stage": "interceptor.published.allow",
+      "subject": "axon.pharma.clinical_research.research.reply",
+      "src": "pharma",
+      "tgt": "clinical_research",
+      "at": "2026-10-22T14:34:39.821088Z",
+      "rationale": "Payload cleared by gatekeeper pipeline.",
+      "coaching": null,
+      "sent": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is a maximum of 2 grams per day, divided into 2-3 doses, with a maximum single dose of 1 gram. This is a reduction from the standard maximum dose of 4 grams per day. The adjustment is based on the potential for increased risk of liver injury in patients with compromised liver function. However, it's essential to note that there is some uncertainty in this recommendation, as the evidence is based on limited studies and may not fully capture the risks in all patients with hepatic impairment. The main safety limit is the risk of liver injury, which can be severe and potentially life-threatening."
+      },
+      "forwarded": {
+        "answer": "For patients with hepatic impairment, the recommended dosing of acetaminophen is a maximum of 2 grams per day, divided into 2-3 doses, with a maximum single dose of 1 gram. This is a reduction from the standard maximum dose of 4 grams per day. The adjustment is based on the potential for increased risk of liver injury in patients with compromised liver function. However, it's essential to note that there is some uncertainty in this recommendation, as the evidence is based on limited studies and may not fully capture the risks in all patients with hepatic impairment. The main safety limit is the risk of liver injury, which can be severe and potentially life-threatening."
+      }
     }
-  ]
+  ],
+  "earlier_audit_events": 180
 }

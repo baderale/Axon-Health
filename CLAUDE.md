@@ -43,6 +43,9 @@ docker compose run --rm audit <conversation_id> --payloads
 # Tier-1 PHI score: recall and clinical-text damage on evals/phi/*.jsonl (add --misses for detail)
 uv run python -m axon.tools.phi_eval
 
+# Judge score on evals/judges/*.jsonl against a host Ollama (--model X to compare, --repeats N)
+OLLAMA_BASE_URL=http://localhost:11434/v1 SEED_DATA_ROOT=$PWD/seed_data uv run python -m axon.tools.judge_eval --misses
+
 # Rebuild the shareable console (add --refresh with NATS_URL set to pull new live runs)
 uv run python -m axon.tools.dashboard
 ```
@@ -56,7 +59,7 @@ The Docker image is built only by the `gatekeeper-interceptor` service. The othe
 1. An operator task arrives on `axon.ingress.<subsidiary>` (NATS request-reply, used by `axon.tools.ask`).
 2. The subsidiary's `SubsidiaryRuntime` (`axon/subsidiary/runtime.py`) runs it through the `Supervisor` graph, which runs the department pipeline (Clinical Research: `intake` → `clinsme`). Each department's output is merged into the task the next department sees.
 3. A department that needs another subsidiary calls the `consult(target, dept, payload)` function it was given. The runtime wraps that in a `GatekeeperRequest` (subject `axon.{src}.{tgt}.{dept}.query`, headers `conversation_id`) and publishes it to `axon.gatekeeper.in`. It then waits on a future keyed by `trace_id`.
-4. The interceptor (`axon/gatekeeper/interceptor.py`) runs Tier-1 rules (`tier1_policy.py`). Tier-1 blocks external egress and redacts the 18 Safe Harbor identifiers found by `phi.py`: patterns for shaped or labelled identifiers, spaCy NER for names and places. It then runs the HIPAA and Compliance judges (`judge.py`, LangGraph retrieve → LLM) on **Tier-1's redacted payload**, and combines the verdicts: block > coach > redact > allow. Every stage goes to `AUDIT.<trace_id>`, and a block opens `INCIDENT.<id>`.
+4. The interceptor (`axon/gatekeeper/interceptor.py`) runs Tier-1 rules (`tier1_policy.py`). Tier-1 blocks external egress and redacts the 18 Safe Harbor identifiers found by `phi.py`: patterns for shaped or labelled identifiers, spaCy NER for names and places. It then runs the HIPAA and Compliance judges (`judge.py`, LangGraph retrieve → LLM) on **Tier-1's redacted payload**, and combines the verdicts: block > coach > allow. A judge's `redact` is turned into a coach (`tier2.redact_means_coach`); only Tier-1's redaction is ever delivered. Every stage goes to `AUDIT.<trace_id>`, and a block opens `INCIDENT.<id>`.
 5. Allow or redact delivers to `axon.gatekeeper.out.<target_subsidiary>`, which the interceptor picks from the request's target, never from sender headers. Every verdict is also announced on `axon.gatekeeper.verdict` as `{trace_id, in_reply_to, ..., verdict}`.
 6. The target runtime runs the department named in the subject and replies through the gatekeeper with verb `reply` and header `in_reply_to=<original trace_id>`. The sender's future resolves from its inbox. A coach or block on **either** leg fails the future at once as a `ConsultationError`, matched by `trace_id` or `in_reply_to`, instead of waiting for the timeout.
 
@@ -64,6 +67,7 @@ The Docker image is built only by the `gatekeeper-interceptor` service. The othe
 - **Only the runtime publishes.** Departments (`axon/subsidiaries/*.py`) and `supervisor.py`/`department.py` must not import `axon.bus`, `nats` or the runtime. `tests/test_subsidiary_graph.py` enforces this with an AST check.
 - **All model calls go through the Model Registry** (`axon/model_registry/registry.py`): a logical name maps to backend, base model, system prompt and retrieval profile. Departments call `ask_model(logical_name, ...)` in `axon/subsidiary/department.py`. A LoRA fine-tune later is a registry change only. Tests stub models by monkeypatching `department.get_client`, and judges by monkeypatching `hipaa_agent.evaluate` / `compliance_agent.evaluate`.
 - **Judge failures fail safe to `coach`**: unparseable output, schema errors and LLM errors all return coach. `_parse_verdict` lowercases decisions because the 8B model writes `"ALLOW"`. Tier-1 follows the same rule: if the spaCy model cannot load, it coaches (`phi.detector_unavailable`) rather than forwarding without name detection.
+- **Only Tier-1 redacts.** The judges decide whether a message goes, never what it says. Milestone 4 found the 8B HIPAA judge's rewrites leaking names and deleting doses, and nothing checked them.
 - Subject names live only in `axon/bus/subjects.py` (`cross_subsidiary`, `parse_cross_subsidiary`, `inbox`, `ingress`).
 
 **Adding a subsidiary:** write department classes (`name`, `description`, `async handle(task, consult)`), give it a `build()` that returns a `Supervisor`, register it in `axon/subsidiaries/__init__.py`, and add a Compose service running `python -m axon.subsidiaries.run <name>`.
@@ -76,11 +80,12 @@ The judges' knowledge is keyword retrieval over `seed_data/<profile>/*.md` (`axo
 - **Host-side tools need `NATS_URL=nats://localhost:4222`.** The default, `nats://nats:4222`, only resolves inside Docker, and nats-py retries forever instead of failing.
 - **The Ollama app on the Mac holds port 11434.** Start the stack with `OLLAMA_HOST_PORT=11435`. Containers reach Ollama over the Docker network, so only the host port changes. Do not stop the user's Ollama app.
 - **The NATS image has no `nats` CLI.** Read the audit trail with the `audit` service, not `nats stream view`.
-- **The 8B judges are not consistent.** A coach verdict in a live run may come from the model rather than the code. Read the audit trail before changing policy or prompts.
+- **Judge changes are scored, not eyeballed.** Run `axon.tools.judge_eval --misses` before and after a prompt, policy or model change. It needs a host Ollama with the judge model pulled (`JUDGE_MODEL` in `registry.py`, `qwen3.6:35b`, 23 GB) and takes about 10 minutes per set and model. Tune on `tuning.jsonl`, never on `holdout.jsonl`; the same holdout rule as for PHI applies. A coach in a live run may still come from the model rather than the code: read the audit trail first.
 - **The AUDIT stream mixes test and live traffic.** Test conversations have judge rationales starting with `stub `. `axon.tools.dashboard --refresh` filters them out.
 - **PHI detector changes are scored, not eyeballed.** Run `axon.tools.phi_eval --misses` before and after. `tests/test_phi_detection.py` has recall and damage floors per eval set. Tune on `generated` and `handwritten`, never on `holdout.jsonl`. It was written blind and scored once, so it is the honest number. If you fix its misses, have a fresh holdout written by someone (or an agent) who has not seen `phi.py`.
 - **Over-redaction is a bug too.** spaCy tags doses ("Max 3 g/day"), eponyms, drug brands and diseases ("West Nile") as people or places. The fix goes in the filters in `phi.py` (`_NOT_A_NAME`, `_DRUG_STEM`, `_ALLOWED_PLACES`), and every fix gets a case in `test_clinical_text_survives`.
-- **The 8B Compliance judge coaches any message that shows a redaction**, whatever the marker says (milestone 3). A `safe-harbor` fake-publisher run ends in coach. The `ask` flow passes only because Intake restates the question without identifiers first.
+- **Small judge models treat redaction markers as PHI.** `llama3.1:8b` coached safe messages for "the name '[REDACTED:name]'" (milestones 3 and 4). `qwen3.6:35b` with thinking off still coaches the dense `safe-harbor` fake-publisher message (a relative's marker plus an age). The `ask` flow passes because Intake restates the question without identifiers first.
+- **`qwen3.6` thinks unless told not to.** The judges' registry entries set `reasoning_effort="none"`; without it the reasoning uses up `max_tokens` and the JSON never arrives (a `judge.parse_failed` coach).
 - **Pages meant to be shared must never contain real patient data.** Use the synthetic identifiers `patient_id 12345` / `MRN-AX-99182`.
 
 ## Branches and config

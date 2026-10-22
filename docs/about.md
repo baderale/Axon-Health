@@ -51,7 +51,7 @@ The engineering version of these points is in the README under *Design tenets*.
 |---|---|
 | Done | Prove that two subsidiaries can share clinical knowledge with patient identifiers removed automatically ([milestone 2](milestones/02-cross-subsidiary.md)). |
 | Done | Catch every kind of patient identifier HIPAA lists (names, addresses, dates, ID numbers and 14 more), and measure it: 83% on messages the system had never seen, up from 18% ([milestone 3](milestones/03-safe-harbor-phi.md)). |
-| Next | Measure the AI gatekeepers' decisions the same way, and fix them rejecting safe messages once identifiers have been removed. |
+| Done | Measure the AI gatekeepers the same way, and stop them rejecting safe messages: on messages they had never seen, they stopped none, and let through 1 of 14 that still had a patient detail in them ([milestone 4](milestones/04-judge-evaluation.md)). |
 | Next | Put a person in the loop: every blocked message goes to a human reviewer who approves or denies it. |
 | Next | Give operators a live console inside the platform, like the Enterprise Console but updating in real time. |
 | Later | Give each department its own fine-tuned model instead of a shared base model. |

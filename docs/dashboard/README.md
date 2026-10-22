@@ -34,7 +34,9 @@ NATS_URL=nats://localhost:4222 uv run python -m axon.tools.dashboard --refresh
 
 `--refresh` keeps every conversation that used real models and drops the ones
 the automated tests produced (their stand-in judges' reasons start with
-`stub `). It keeps existing notes and final answers. New runs get empty ones:
+`stub `). It keeps existing notes and final answers, and keeps runs the stream
+no longer holds: the milestone 2 and 3 runs exist only in `snapshot.json`,
+because the Docker volume that held them is gone. New runs get empty ones:
 fill them in `snapshot.json`. The final answer is not in the audit log, so copy
 it from the `ask` output.
 

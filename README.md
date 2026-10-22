@@ -4,7 +4,7 @@ AI-native medical-technology umbrella platform. Federated subsidiaries, LangGrap
 
 **New here?** Start with [`docs/about.md`](docs/about.md): what Axon Health is, its mission, vision and goals, and a glossary. To show the platform to someone, share the **Enterprise Console** or the **Org Map**. Both are listed with their links in [`docs/dashboard/`](docs/dashboard/README.md).
 
-> **Status:** Three milestones done. The **gatekeeper layer** (Tier-1 deterministic policy + Tier-2 LLM judges + AUDIT/INCIDENT streams); the **first two subsidiaries**, Axon Clinical Research and Axon Pharma, which consult each other through it; and **Tier-1 coverage of all 18 HIPAA Safe Harbor identifiers**, measured at **82.9% recall with 1.5% damage to clinical text** on a held-out set (the milestone-2 rules caught 17.6%). The FastAPI/HTMX user surface, human review of blocks, and the pgvector data layer arrive in later milestones. Milestone details and acceptance criteria live in [`docs/milestones/`](docs/milestones/).
+> **Status:** Four milestones done. The **gatekeeper layer** (Tier-1 deterministic policy + Tier-2 LLM judges + AUDIT/INCIDENT streams); the **first two subsidiaries**, Axon Clinical Research and Axon Pharma, which consult each other through it; and **Tier-1 coverage of all 18 HIPAA Safe Harbor identifiers**, measured at **82.9% recall with 1.5% damage to clinical text** on a held-out set (the milestone-2 rules caught 17.6%); and **measured AI judges**, which on a blind set stopped **no safe messages** and let through **1 of 14** messages with identifiers Tier-1 missed (the 8B judges let through 7). The FastAPI/HTMX user surface, human review of blocks, and the pgvector data layer arrive in later milestones. Milestone details and acceptance criteria live in [`docs/milestones/`](docs/milestones/).
 
 ## Architecture in one paragraph
 
@@ -81,7 +81,23 @@ uv run python -m axon.tools.phi_eval --misses   # plus every miss and every dama
 | `handwritten.jsonl`: written blind, used for tuning | 80 | 96.6% | 0.0% |
 | `generated.jsonl`: seeded templates | 200 | 100.0% | 0.0% |
 
-What it still misses, and why the 8B judges currently coach free-text messages after redaction, is in [milestone 3](docs/milestones/03-safe-harbor-phi.md).
+What it still misses is in [milestone 3](docs/milestones/03-safe-harbor-phi.md).
+
+## What the AI judges decide
+
+The HIPAA Agent looks for identifiers Tier-1 missed; the Compliance Agent for everything else (FDA marketing, 21 CFR Part 11, trade secrets, controlled substances, SEC, sanctions). They decide whether a message goes, never what it says: only Tier-1's deterministic redaction is ever delivered, and a judge that finds a leftover identifier sends the message back (`coach`) with the detail quoted. They run on `qwen3.6:35b` with thinking off; the departments stay on `llama3.1:8b`.
+
+```sh
+OLLAMA_BASE_URL=http://localhost:11434/v1 SEED_DATA_ROOT=$PWD/seed_data \
+  uv run python -m axon.tools.judge_eval --misses              # registry models, both sets
+  # --model llama3.1:8b to compare a model, --repeats 3 for consistency
+```
+
+| Eval set (`evals/judges/`), [milestone 4](docs/milestones/04-judge-evaluation.md) | Cases | Safe messages stopped | Leftover PHI delivered | Compliance violations stopped |
+|---|---|---|---|---|
+| `holdout.jsonl`: written blind, scored once | 60 | **0.0%** | **7.1%** (1 of 14) | **100%** |
+| same, with `llama3.1:8b` judges | 60 | 6.1% | 50.0% | 92.3% |
+| `tuning.jsonl` | 40 | 12.5% | 0.0% | 100% |
 
 ## Repository layout
 
@@ -93,8 +109,9 @@ axon/
   audit/               AUDIT.* / INCIDENT.* JetStream helpers
   subsidiary/          Template: department contract, Supervisor graph, runtime
   subsidiaries/        Axon Clinical Research, Axon Pharma, service entry point
-  tools/               Operator CLIs (ask, audit, dashboard, fake_publisher, phi_eval)
+  tools/               Operator CLIs (ask, audit, dashboard, fake_publisher, phi_eval, judge_eval)
 evals/phi/             PHI evaluation sets (generated, handwritten, holdout) and their generator
+evals/judges/          Judge evaluation sets (tuning, holdout)
 docs/about.md          What Axon Health is: mission, vision, goals, glossary
 docs/milestones/       Goals and acceptance criteria per milestone
 docs/dashboard/        Shareable Enterprise Console and Org Map, and how to refresh them
@@ -114,7 +131,8 @@ tests/
 
 - Docker Desktop (or a Docker Engine that supports Compose v2)
 - Python 3.12+ (only required if you want to run the test suite outside Docker)
-- ~6 GB of disk for the Ollama base model (`llama3.1:8b`)
+- ~30 GB of disk for the Ollama models: `llama3.1:8b` for the departments, `qwen3.6:35b` for the judges
+- About 28 GB of memory for Docker if Ollama runs inside it. Ollama inside Docker on a Mac runs on the CPU; a native Ollama uses the GPU and is several times faster
 
 ## Quickstart — full stack via Docker Compose
 
@@ -178,7 +196,7 @@ $env:NATS_URL = "nats://localhost:4222"
 .venv\Scripts\python -m pytest -v
 ```
 
-The current suite is **88 tests passing**: 79 unit (Tier-1 policy, Safe Harbor detection and eval floors, judge parsing, subsidiary graphs, single-publisher check) + 9 integration (interceptor, cross-subsidiary).
+The current suite is **94 tests passing**: 85 unit (Tier-1 policy, Safe Harbor detection and eval floors, judge parsing and verdict combining, eval-set checks, subsidiary graphs, single-publisher check) + 9 integration (interceptor, cross-subsidiary).
 
 ## Configuration
 
@@ -189,7 +207,7 @@ Environment variables (see `.env.example`):
 | `NATS_URL` | `nats://nats:4222` | NATS broker address |
 | `OLLAMA_BASE_URL` | `http://ollama:11434/v1` | OpenAI-compatible Ollama endpoint |
 | `OLLAMA_API_KEY` | `ollama` | Ollama's placeholder API key (Ollama does no auth by default) |
-| `DEFAULT_MODEL` | `llama3.1:8b` | Base model the judges use |
+| `DEFAULT_MODEL` | `llama3.1:8b` | Model `ollama-init` pulls for the departments (it also pulls the judges' `qwen3.6:35b`). Which model each agent uses is set in the Model Registry |
 | `LOG_LEVEL` | `INFO` | Interceptor log level |
 | `SEED_DATA_ROOT` | `/app/seed_data` | Where the judges find their RAG corpora |
 | `AXON_CONSULT_TIMEOUT` | `300` | Seconds a department waits for another subsidiary's reply |
@@ -206,8 +224,8 @@ Environment variables (see `.env.example`):
 | Axon Pharma subsidiary (Supervisor + Pharma Research + Marketing) | **done** except Marketing |
 | Cross-subsidiary primary scenario (redact path) | **done** ([milestone 2](docs/milestones/02-cross-subsidiary.md)) |
 | Tier-1 covers all 18 Safe Harbor identifiers, with a measured score | **done** ([milestone 3](docs/milestones/03-safe-harbor-phi.md)) |
-| Judge evaluation: labelled verdicts, per-model scores (the 8B judges coach free text after redaction) | next |
-| Cross-subsidiary block-path smoke test (HITL) | not started |
+| Judge evaluation: labelled verdicts, per-model scores; judges no longer rewrite payloads | **done** ([milestone 4](docs/milestones/04-judge-evaluation.md)) |
+| Cross-subsidiary block-path smoke test (HITL) | next |
 | FastAPI + HTMX user surface (`/`, `/trace/<id>`, `/incidents`) | not started |
 | pgvector data layer per subsidiary | not started |
 | Real LoRA fine-tunes for departmental LLMs | deferred |
