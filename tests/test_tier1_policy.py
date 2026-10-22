@@ -7,8 +7,6 @@ ALLOW+escalate (boundary crossing), REDACT, BLOCK.
 
 from __future__ import annotations
 
-import pytest
-
 from axon.gatekeeper import tier1_policy
 from axon.gatekeeper.verdict import Decision, GatekeeperRequest, Severity, Tier
 

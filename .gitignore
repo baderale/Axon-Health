@@ -47,7 +47,6 @@ htmlcov/
 # Docker volumes / local data
 .data/
 nats-data/
-postgres-data/
 ollama-data/
 
 # OS

@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Axon Health is a prototype AI-native medical-technology platform: federated subsidiaries made of LangGraph department agents, which talk to each other only through HIPAA and Compliance gatekeepers on a NATS bus. Everything runs in Docker, with Ollama serving `llama3.1:8b`.
+Axon Health is a prototype AI-native medical-technology platform: federated subsidiaries made of LangGraph department agents, which talk to each other only through HIPAA and Compliance gatekeepers on a NATS bus. It runs in Docker or directly on the host (README, "Running without Docker"), with Ollama serving `llama3.1:8b` to the departments and `qwen3.6:35b` to the judges.
 
 ## Where things are documented
 

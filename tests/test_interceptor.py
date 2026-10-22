@@ -13,7 +13,6 @@ import pytest
 from axon.bus.nats_client import (
     decode_json,
     ensure_streams,
-    publish_json,
     session,
     subscribe,
 )
@@ -27,7 +26,6 @@ from axon.gatekeeper.verdict import (
     Tier,
     Verdict,
 )
-
 
 pytestmark = [pytest.mark.usefixtures("require_nats")]
 

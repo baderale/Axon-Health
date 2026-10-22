@@ -111,7 +111,7 @@ axon/
   subsidiaries/        Axon Clinical Research, Axon Pharma, service entry point
   tools/               Operator CLIs (ask, audit, dashboard, fake_publisher, phi_eval, judge_eval)
 evals/phi/             PHI evaluation sets (generated, handwritten, holdout) and their generator
-evals/judges/          Judge evaluation sets (tuning, holdout)
+evals/judges/          Judge evaluation sets (tuning, holdout) and the saved milestone-4 runs (results/)
 docs/about.md          What Axon Health is: mission, vision, goals, glossary
 docs/milestones/       Goals and acceptance criteria per milestone
 docs/dashboard/        Shareable Enterprise Console and Org Map, and how to refresh them
@@ -167,6 +167,28 @@ Tear down (preserving volumes):
 ```pwsh
 docker compose down
 ```
+
+## Running without Docker (macOS)
+
+Everything also runs directly on the host, which on a Mac is faster: the native
+Ollama app uses the GPU, Ollama inside Docker uses the CPU. Milestone 4 was run
+this way.
+
+```sh
+ollama pull llama3.1:8b && ollama pull qwen3.6:35b    # the Ollama app, not a container
+brew install nats-server
+nats-server --jetstream -a 127.0.0.1 -p 4222 &
+
+export NATS_URL=nats://localhost:4222 OLLAMA_BASE_URL=http://localhost:11434/v1 SEED_DATA_ROOT=$PWD/seed_data
+uv run python -m axon.gatekeeper.interceptor &
+uv run python -m axon.subsidiaries.run clinical_research &
+uv run python -m axon.subsidiaries.run pharma &
+
+uv run python -m axon.tools.ask "Patient_id 12345, MRN MRN-AX-99182, hepatic impairment. Safe dosing window for acetaminophen?"
+uv run python -m axon.tools.audit <conversation_id> --payloads
+```
+
+Stop the three services before running the integration tests (see below).
 
 ## Running the test suite locally
 

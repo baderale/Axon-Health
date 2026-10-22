@@ -24,7 +24,6 @@ from axon.bus.nats_client import decode_json, publish_json, session, subscribe
 from axon.bus.subjects import Subjects
 from axon.gatekeeper.verdict import GatekeeperRequest
 
-
 SCENARIOS: dict[str, GatekeeperRequest] = {
     "allow": GatekeeperRequest(
         source_subsidiary="clinical_research",
