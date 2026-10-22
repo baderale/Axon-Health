@@ -689,7 +689,7 @@ function renderStatic() {
   document.getElementById("stamp").textContent = day;
   document.getElementById("stamp-rev").textContent = SNAPSHOT.revision || "";
   const excluded = SNAPSHOT.total_audit_events - SNAPSHOT.events.length;
-  document.getElementById("source-note").textContent = `Source: the Axon-Health repo and its AUDIT stream, ${day}. The ${runs.length} runs shown are every live run with real models. The ${excluded} other audit events came from automated tests with stand-in judges and are left out.`;
+  document.getElementById("source-note").textContent = `Source: the Axon-Health repo and its AUDIT stream, ${day}. The ${runs.length} runs shown are every live run with real models. The ${excluded} other audit events came from automated tests with stand-in judges, or were synthetic messages sent straight to the gatekeeper, and are left out.`;
 }
 
 renderMap();
