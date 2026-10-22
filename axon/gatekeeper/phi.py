@@ -87,6 +87,8 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("patient_id", re.compile(r"(?i)\b(?:patient|pt)\.?[\s_-]*(?:id\b|#|no\.|number\b)\s*[:#=]?\s*(?P<v>\d{3,})")),
     # 8
     ("mrn", re.compile(r"(?i)\b(?:MRN|med(?:ical)?\.?\s*rec(?:ord)?)" + _LABEL_TAIL + _ID_VALUE)),
+    # The label fused into the value: "Re: MRN-AX-99182." (milestone 4 holdout).
+    ("mrn", re.compile(r"(?i)\b(?P<v>MRN-(?=[A-Za-z0-9-]*\d)[A-Za-z0-9][A-Za-z0-9-]{3,})")),
     # 7
     ("ssn", re.compile(r"\b\d{3}-\d{2}-\d{4}\b")),
     (

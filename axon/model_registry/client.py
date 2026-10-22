@@ -54,11 +54,15 @@ class ModelClient:
             messages.append({"role": "system", "content": f"Context:\n{extra_context}"})
         messages.append({"role": "user", "content": user_message})
 
+        extra: dict[str, Any] = {}
+        if self.spec.reasoning_effort is not None:
+            extra["reasoning_effort"] = self.spec.reasoning_effort
         response = self._client.chat.completions.create(
             model=self.spec.base_model,
             messages=messages,
             temperature=self.spec.temperature,
             max_tokens=self.spec.max_tokens,
+            **extra,
         )
         return response.choices[0].message.content or ""
 

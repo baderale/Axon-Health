@@ -59,6 +59,9 @@ services:
         set -eu
         echo "Pulling base model ${DEFAULT_MODEL:-llama3.1:8b} into Ollama..."
         OLLAMA_HOST=http://ollama:11434 ollama pull ${DEFAULT_MODEL:-llama3.1:8b}
+        # The judges' model (JUDGE_MODEL in axon/model_registry/registry.py), 23 GB.
+        echo "Pulling judge model qwen3.6:35b into Ollama..."
+        OLLAMA_HOST=http://ollama:11434 ollama pull qwen3.6:35b
         echo "Done."
     environment:
       - OLLAMA_HOST=http://ollama:11434

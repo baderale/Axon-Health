@@ -9,8 +9,10 @@ See ``docs/dashboard/README.md`` for how it is published and shared.
 
 ``--refresh`` keeps every conversation whose judges were real models and drops
 the ones produced by the automated tests (their stub judges' rationales start
-with "stub "). Hand-written notes and final answers already in the snapshot
-are kept; add them for new runs by editing ``snapshot.json``.
+with "stub "). Runs already in the snapshot that the stream no longer holds
+are kept, so a fresh NATS volume does not erase them. Hand-written notes and
+final answers already in the snapshot are kept; add them for new runs by
+editing ``snapshot.json``.
 """
 
 from __future__ import annotations
@@ -82,15 +84,22 @@ def _revision() -> str:
 def refresh() -> dict:
     snapshot = json.loads(SNAPSHOT.read_text(encoding="utf-8")) if SNAPSHOT.exists() else {}
     total, events = asyncio.run(_read_audit())
+    fresh = {e["conv"] for e in events}
+    # Runs the stream no longer holds (a new NATS volume, another machine) stay:
+    # the snapshot is their only copy.
+    kept = [e for e in snapshot.get("events", []) if e["conv"] not in fresh]
+    if kept and "earlier_audit_events" not in snapshot:
+        snapshot["earlier_audit_events"] = snapshot.get("total_audit_events", 0)
+    total += snapshot.get("earlier_audit_events", 0)
     runs = snapshot.get("runs", {})
-    for conv in sorted({e["conv"] for e in events}):
+    for conv in sorted(fresh):
         runs.setdefault(conv, {"note": "", "final_answer": ""})
     snapshot.update(
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
         revision=_revision(),
         total_audit_events=total,
         runs=runs,
-        events=[{k: e[k] for k in _EVENT_FIELDS} for e in events],
+        events=kept + [{k: e[k] for k in _EVENT_FIELDS} for e in events],
     )
     SNAPSHOT.write_text(json.dumps(snapshot, indent=2, default=str) + "\n", encoding="utf-8")
     return snapshot

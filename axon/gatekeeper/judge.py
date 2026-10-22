@@ -73,6 +73,10 @@ def _build_user_message(request: GatekeeperRequest) -> str:
 
 _BRACE_JSON = re.compile(r"\{[\s\S]*\}")
 
+# Words the 8B judges use instead of the schema's. Only ever mapped to a
+# stricter decision; anything else unknown still fails safe to coach.
+_DECISION_SYNONYMS = {"reject": "block", "deny": "block", "denied": "block"}
+
 
 def _parse_verdict(text: str, *, tier: Tier) -> Verdict:
     """Parse the model's JSON output into a Verdict. Forgiving."""
@@ -88,12 +92,14 @@ def _parse_verdict(text: str, *, tier: Tier) -> Verdict:
             tier=tier,
             rationale="Judge returned unparseable output; coaching the caller to retry.",
             coaching_message="Internal judge parse error; please retry.",
+            matched_rules=["judge.parse_failed"],
         )
 
     try:
         # Small models often answer "ALLOW" / "High"; the schema is lowercase.
+        decision = str(data["decision"]).strip().lower()
         return Verdict(
-            decision=Decision(str(data["decision"]).strip().lower()),
+            decision=Decision(_DECISION_SYNONYMS.get(decision, decision)),
             severity=Severity(str(data.get("severity") or "low").strip().lower()),
             tier=tier,
             rationale=data.get("rationale", ""),
@@ -108,6 +114,7 @@ def _parse_verdict(text: str, *, tier: Tier) -> Verdict:
             tier=tier,
             rationale=f"Judge output failed schema validation: {exc}",
             coaching_message="Internal judge schema error; please retry.",
+            matched_rules=["judge.schema_invalid"],
         )
 
 
@@ -140,6 +147,7 @@ def build_judge_graph(logical_model: str):
                     tier=tier,
                     rationale=f"Judge LLM unavailable: {exc}",
                     coaching_message="Internal LLM error; please retry.",
+                    matched_rules=["judge.llm_error"],
                 )
             }
         return {"verdict": _parse_verdict(text, tier=tier)}
@@ -165,5 +173,6 @@ async def judge(logical_model: str, request: GatekeeperRequest) -> Verdict:
             tier=Tier.TIER2_HIPAA if "hipaa" in logical_model else Tier.TIER2_COMPLIANCE,
             rationale="Judge graph terminated without a verdict.",
             coaching_message="Internal judge error; please retry.",
+            matched_rules=["judge.no_verdict"],
         )
     return verdict

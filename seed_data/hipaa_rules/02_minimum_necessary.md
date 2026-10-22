@@ -16,9 +16,10 @@ Operational implications for the Axon Health gatekeeper:
   - When Clinical Research's Clinical SME consults Axon Pharma about a drug
     interaction, the Pharma Research department does not need the patient's
     identity, only the relevant clinical context (condition, medications,
-    relevant lab values). REDACT identifiers.
+    relevant lab values). Tier-1 removes the identifiers it recognises; if
+    any remain, the HIPAA Agent COACHES the sender to remove them.
   - When a department requests aggregated population analytics, never include
-    individual identifiers. REDACT or BLOCK if redaction would defeat the
-    request.
+    individual identifiers. COACH if any remain, or BLOCK if removing them
+    would defeat the request.
   - When the action is patient-facing (treating the individual), full PHI
     flow is permitted.

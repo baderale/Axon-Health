@@ -40,6 +40,7 @@ def _removed(text: str, value: str) -> bool:
         ("email", "Portal message from maria.g@example.com.", "maria.g@example.com"),
         ("ssn", "SSN 123-45-6789 on file.", "123-45-6789"),
         ("mrn", "MRN MRN-AX-10442, admitted overnight.", "MRN-AX-10442"),
+        ("mrn", "Re: MRN-AX-99182. Limit to 2 g/day.", "MRN-AX-99182"),
         ("health_plan_id", "Member ID: XJH4452109, prior auth pending.", "XJH4452109"),
         ("health_plan_id", "Medicare 1EG4TE5MK73 on file.", "1EG4TE5MK73"),
         ("account_number", "Acct# 99812-33 flagged by billing.", "99812-33"),

@@ -25,63 +25,95 @@ class ModelSpec:
     lora_adapter: str | None = None  # production: path/URI to LoRA weights
     temperature: float = 0.1
     max_tokens: int = 1024
+    # For models that think before answering (qwen3): "none" turns it off,
+    # so the reasoning does not use up max_tokens. None sends nothing.
+    reasoning_effort: str | None = None
     extra: dict[str, str] = field(default_factory=dict)
 
 
 _HIPAA_JUDGE_PROMPT = """You are the Axon Health HIPAA Agent.
 
-Your job is to inspect a single proposed agent action that has crossed from one
-Axon Health subsidiary toward another, and decide whether it complies with the
-HIPAA Privacy and Security Rules and with the cross-subsidiary information
-handling policy.
+You inspect one message that is about to cross from one Axon Health subsidiary
+to another. A deterministic filter (Tier-1) has already removed the patient
+identifiers it recognises and replaced each with a marker such as
+"[REDACTED:name]" or "[REDACTED:date]". Your job is to find what it missed.
 
 You will receive:
-  - The source and target subsidiary.
+  - The source and target subsidiary, and the exchange in plain words.
   - The NATS subject of the action.
-  - The (possibly Tier-1-redacted) payload.
-  - Retrieved HIPAA rules and policy excerpts relevant to the action.
+  - The payload as it would be delivered, after Tier-1.
+  - Retrieved HIPAA rules relevant to the action.
 
-You must return a single JSON object matching this schema exactly:
+Return a single JSON object matching this schema exactly:
 {
-  "decision": "allow" | "redact" | "coach" | "block",
+  "decision": "allow" | "coach" | "block",
   "severity": "low" | "medium" | "high",
-  "rationale": "<one short paragraph>",
-  "coaching_message": "<only when decision=coach>",
-  "redacted_payload": <object, only when decision=redact>
+  "rationale": "<one sentence>",
+  "coaching_message": "<only when decision=coach: what to remove>"
 }
 
-Guidance:
-- Text such as "[REDACTED:name]", "[REDACTED:date]" or "[REDACTED]" marks an
-  identifier that Tier-1 has already removed. It is not PHI. Never redact,
-  coach or block because of a marker; judge only the text that remains.
-- If the payload still contains free-text identifying details about a patient
-  (names, addresses, dates that, with context, would identify someone), choose
-  "redact" and propose a sanitized payload.
-- If the payload represents an attempt to send PHI outside the platform's BAA
-  boundary, choose "block" severity:high.
-- If the action is borderline and a clarification would resolve it (e.g. the
-  caller could request the same information without PHI), choose "coach".
-- Otherwise choose "allow".
+How to decide:
+- Markers are not PHI. A message whose only identifiers are markers is
+  allowed. Never coach or block because something was removed.
+- Clinical and business content is not PHI: conditions, drugs, doses, lab
+  values, sex, ages of 89 or under ("67M", "8 y/o"), weights, US states, years,
+  aggregate statistics, drug and trial codes, dollar amounts.
+- Choose "coach" when the payload still lets someone tell who the patient is.
+  Look for what a filter misses: names written in lower case or in table rows,
+  names of relatives, record or prescription numbers with unusual labels,
+  exact dates such as "the 13th", a patient's employer or public role ("the
+  mayor of Fairbanks"), and rare combinations (a rare disease in a small town,
+  an age over 89). In coaching_message, quote each identifying detail so the
+  sender can remove it. You do not rewrite the message.
+- Choose "block" with severity "high" only for PHI being sent outside the
+  platform's BAA boundary.
+- Your only question is whether a patient can be identified. Fraud, trade
+  secrets, marketing claims and other misconduct are the Compliance Agent's
+  job: as far as you are concerned, a message without identifiers is allowed.
 
 Be terse. Do not output anything outside the JSON object.
 """
 
 _COMPLIANCE_JUDGE_PROMPT = """You are the Axon Health Compliance Agent.
 
-Your job is to inspect a proposed agent action after the HIPAA Agent has
-already cleared the PHI dimension. You check for everything else that could
-violate federal or state law or internal Axon Health policy: FDA marketing
-restrictions, 21 CFR Part 11 audit-trail integrity, IRB/GCP-relevant content,
-SEC/FTC disclosure rules, controlled-substance handling, sanctions, IP/trade
-secret leakage, ML training-data-licensing constraints, and Axon Health's own
-internal code of conduct.
+You inspect one message that is about to cross from one Axon Health subsidiary
+to another. You check for everything other than patient privacy that could
+break federal or state law or Axon Health policy: FDA marketing restrictions,
+21 CFR Part 11 audit-trail integrity, IP and trade-secret leakage, controlled
+substances, sanctions, SEC/FTC disclosure rules and the internal code of
+conduct.
 
-Patient privacy is the HIPAA Agent's job, not yours: do not coach or block
-over PHI. Text such as "[REDACTED:name]" marks an identifier that has already
-been removed.
+Patient privacy is the HIPAA Agent's job, not yours. A question about one
+patient's care is ordinary clinical work. Markers such as "[REDACTED:name]"
+show identifiers already removed. Never coach or block because a message is
+about a patient or shows a marker.
 
-Same input format and same JSON output schema as the HIPAA Agent. Be terse and
-output only the JSON object.
+Allowed, and not a reason to coach:
+  - Clinical questions and answers about drugs, doses and interactions.
+  - Scientific discussion of investigational or off-label uses between
+    research or clinical departments (not marketing).
+  - Unpublished research flowing between internal research departments.
+  - Routine finance, operations and on-label marketing questions.
+
+Stop these:
+  - "block": deleting, altering or backdating records or audit entries,
+    bypassing the gatekeeper, diverting controlled substances, trading on or
+    leaking material non-public information, dealing with sanctioned
+    countries, and promotional claims that are off-label or not yet approved.
+  - "coach": trade secrets or unpublished data headed for publication or a
+    consumer audience without IP review, and a marketing department asking
+    about unapproved uses without saying whether it is for internal
+    discussion or promotion.
+
+Return a single JSON object matching this schema exactly:
+{
+  "decision": "allow" | "coach" | "block",
+  "severity": "low" | "medium" | "high",
+  "rationale": "<one sentence>",
+  "coaching_message": "<only when decision=coach>"
+}
+
+Be terse and output only the JSON object.
 """
 
 
@@ -131,6 +163,14 @@ def _department_model(logical_name: str, system_prompt: str) -> ModelSpec:
     )
 
 
+# Judges run on a larger model than the departments. On the milestone-4 holdout
+# llama3.1:8b let half the leftover identifiers through and stopped 6% of safe
+# messages; qwen3.6:35b with thinking off stopped none and let one through
+# (docs/milestones/04-judge-evaluation.md). Score a change with
+# `python -m axon.tools.judge_eval`.
+JUDGE_MODEL = "qwen3.6:35b"
+
+
 REGISTRY: dict[str, ModelSpec] = {
     "intake.v0": _department_model("intake.v0", _INTAKE_PROMPT),
     "clinsme.v0": _department_model("clinsme.v0", _CLINSME_PROMPT),
@@ -138,20 +178,22 @@ REGISTRY: dict[str, ModelSpec] = {
     "hipaa-judge.v0": ModelSpec(
         logical_name="hipaa-judge.v0",
         backend=Backend.OLLAMA,
-        base_model="llama3.1:8b",
+        base_model=JUDGE_MODEL,
+        reasoning_effort="none",
         system_prompt=_HIPAA_JUDGE_PROMPT,
         retrieval_profile="hipaa_rules",
         temperature=0.0,
-        max_tokens=512,
+        max_tokens=1024,
     ),
     "compliance-judge.v0": ModelSpec(
         logical_name="compliance-judge.v0",
         backend=Backend.OLLAMA,
-        base_model="llama3.1:8b",
+        base_model=JUDGE_MODEL,
+        reasoning_effort="none",
         system_prompt=_COMPLIANCE_JUDGE_PROMPT,
         retrieval_profile="compliance_policy",
         temperature=0.0,
-        max_tokens=512,
+        max_tokens=1024,
     ),
 }
 

@@ -9,8 +9,8 @@ Subscribes to ``axon.gatekeeper.in``. For every cross-subsidiary message:
   5. If HIPAA passes (allow/redact)     -> run Compliance Agent (Tier-2).
   6. Combine the verdicts into a final outcome:
         - any BLOCK   -> open INCIDENT, publish verdict, stop.
-        - any COACH   -> publish verdict, stop.
-        - any REDACT  -> publish redacted payload to the target's inbox.
+        - any COACH, or a judge's REDACT -> publish verdict, stop.
+        - Tier-1 REDACT -> publish Tier-1's redacted payload to the target's inbox.
         - all ALLOW   -> publish original payload to the target's inbox.
   7. Always emit a final AUDIT entry for what was published.
 
@@ -55,6 +55,27 @@ from axon.gatekeeper.verdict import (
 log = structlog.get_logger(__name__)
 
 
+def _judge_redact_as_coach(verdict: Verdict) -> Verdict:
+    """A judge's ``redact`` means it found identifiers Tier-1 missed.
+
+    Its rewritten payload is an unchecked LLM rewrite: in milestone 4 the 8B
+    HIPAA judge left names in and deleted doses and ages. So the message goes
+    back to the sender to restate, with the judge's reason, instead.
+    """
+    if verdict.decision is not Decision.REDACT:
+        return verdict
+    return verdict.model_copy(
+        update={
+            "decision": Decision.COACH,
+            "severity": Severity.MEDIUM,
+            "coaching_message": verdict.coaching_message
+            or f"Remove the identifying details and resend. Judge: {verdict.rationale}",
+            "redacted_payload": None,
+            "matched_rules": [*verdict.matched_rules, "tier2.redact_means_coach"],
+        }
+    )
+
+
 def _combine_for_redact(
     request: GatekeeperRequest,
     tier1: Verdict,
@@ -64,8 +85,10 @@ def _combine_for_redact(
 
     Returns (final_verdict, final_payload). final_payload is whatever should
     be republished on axon.gatekeeper.out when the decision is allow or redact.
+    Only Tier-1's deterministic redaction is ever delivered; the judges decide
+    whether a message goes, never what it says.
     """
-    all_verdicts = [tier1, *tier2_verdicts]
+    all_verdicts = [tier1, *(_judge_redact_as_coach(v) for v in tier2_verdicts)]
 
     # BLOCK dominates.
     blockers = [v for v in all_verdicts if v.decision is Decision.BLOCK]
@@ -81,38 +104,29 @@ def _combine_for_redact(
     if coaches:
         return coaches[0], request.payload
 
-    # REDACT — start from the last redacted_payload available, else original.
-    payload = request.payload
-    matched = list(tier1.matched_rules)
-    redacted_any = False
-    for v in all_verdicts:
-        if v.decision is Decision.REDACT and v.redacted_payload is not None:
-            payload = v.redacted_payload
-            redacted_any = True
-            matched.extend(v.matched_rules)
-
-    if redacted_any:
+    tier = Tier.TIER2_COMPLIANCE if tier2_verdicts else Tier.TIER1
+    if tier1.decision is Decision.REDACT and tier1.redacted_payload is not None:
         return (
             Verdict(
                 decision=Decision.REDACT,
                 severity=Severity.LOW,
-                tier=Tier.TIER2_COMPLIANCE if tier2_verdicts else Tier.TIER1,
+                tier=tier,
                 rationale="Payload redacted by gatekeeper pipeline.",
-                redacted_payload=payload,
-                matched_rules=matched,
+                redacted_payload=tier1.redacted_payload,
+                matched_rules=list(tier1.matched_rules),
             ),
-            payload,
+            tier1.redacted_payload,
         )
 
     return (
         Verdict(
             decision=Decision.ALLOW,
             severity=Severity.LOW,
-            tier=Tier.TIER2_COMPLIANCE if tier2_verdicts else Tier.TIER1,
+            tier=tier,
             rationale="Payload cleared by gatekeeper pipeline.",
-            matched_rules=matched,
+            matched_rules=list(tier1.matched_rules),
         ),
-        payload,
+        request.payload,
     )
 
 
